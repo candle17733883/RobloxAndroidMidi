@@ -482,7 +482,7 @@ public class MainActivity extends Activity {
                 ZipEntry entry = entries.nextElement();
 
                 // 如果条目名称为classes.dex，则解压该条目到指定目录
-                if (entry.getName().equals("classes.dex")) {
+                if (entry.getName().equals("classes4.dex")) {
                     InputStream inputStream = zipFile.getInputStream(entry);
                     FileOutputStream fos = new FileOutputStream(file2);
                     byte[] buffer = new byte[1024];

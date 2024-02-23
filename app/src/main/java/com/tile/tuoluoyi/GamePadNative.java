@@ -192,20 +192,6 @@ public class GamePadNative {
                     switch (currentMode) {
                         case 0:
                             //原始陀螺仪数据乘以灵敏度，再加上上次陀螺仪数据四舍五入的差值
-                            final float nowX0 = sensitivityXMode0 * xValue + lastX;
-                            final float nowY0 = sensitivityYMode0 * yValue + lastY;
-                            //四舍五入之后的整数部分数值
-                            final int roundX0 = Math.round(nowX0);
-                            final int roundY0 = Math.round(nowY0);
-
-                            //lastX和lastY用来记录四舍五入的小数部分差值，下次获取的传感器数据会先加上此差值再参与计算
-                            lastX = nowX0 - roundX0;
-                            lastY = nowY0 - roundY0;
-
-                            nativeUInputEvent(roundX0, roundY0);
-                            break;
-                        case 1:
-                            //原始陀螺仪数据乘以灵敏度，再加上上次陀螺仪数据四舍五入的差值
                             final float nowX1 = sensitivityXMode1 * xValue + lastX;
                             final float nowY1 = sensitivityYMode1 * yValue + lastY;
                             //四舍五入之后的整数部分数值
@@ -217,6 +203,20 @@ public class GamePadNative {
                             lastY = nowY1 - roundY1;
 
                             nativeUHidEvent(roundX1, roundY1);
+                            break;
+                        case 1:
+                            //原始陀螺仪数据乘以灵敏度，再加上上次陀螺仪数据四舍五入的差值
+                            final float nowX0 = sensitivityXMode0 * xValue + lastX;
+                            final float nowY0 = sensitivityYMode0 * yValue + lastY;
+                            //四舍五入之后的整数部分数值
+                            final int roundX0 = Math.round(nowX0);
+                            final int roundY0 = Math.round(nowY0);
+
+                            //lastX和lastY用来记录四舍五入的小数部分差值，下次获取的传感器数据会先加上此差值再参与计算
+                            lastX = nowX0 - roundX0;
+                            lastY = nowY0 - roundY0;
+
+                            nativeUInputEvent(roundX0, roundY0);
                             break;
                         case 2:
                             pointerCoords[0].setAxisValue(MotionEvent.AXIS_RZ, xValue * sensitivityXMode2);
@@ -249,10 +249,10 @@ public class GamePadNative {
                 public void pressTL(boolean pressed) throws RemoteException {
                     switch (currentMode) {
                         case 0:
-                            nativeUInputPressTL(pressed);
+                            nativeUHidPressTL(pressed);
                             break;
                         case 1:
-                            nativeUHidPressTL(pressed);
+                            nativeUInputPressTL(pressed);
                             break;
                         case 2:
                             final long now = SystemClock.uptimeMillis();
@@ -280,10 +280,10 @@ public class GamePadNative {
 
                     switch (currentMode) {
                         case 0:
-                            nativeUInputPressTR(pressed);
+                            nativeUHidPressTR(pressed);
                             break;
                         case 1:
-                            nativeUHidPressTR(pressed);
+                            nativeUInputPressTR(pressed);
                             break;
                         case 2:
                             final long now = SystemClock.uptimeMillis();
@@ -310,10 +310,10 @@ public class GamePadNative {
 
                     switch (currentMode) {
                         case 0:
-                            nativeUInputPressThumbL(pressed);
+                            nativeUHidPressThumbL(pressed);
                             break;
                         case 1:
-                            nativeUHidPressThumbL(pressed);
+                            nativeUInputPressThumbL(pressed);
                             break;
                         case 2:
                             final long now = SystemClock.uptimeMillis();
@@ -347,13 +347,14 @@ public class GamePadNative {
                 public boolean create() throws RemoteException {
                     switch (currentMode) {
                         case 0:
-                            if (!isUInputCreated)
-                                isUInputCreated = nativeCreateUInput();
-                            return isUInputCreated;
-                        case 1:
+                            Log.d("MyTag", "HELLO WORLD THIS IS FROM GAMEPADNATIVE");
                             if (!isUHidCreated)
                                 isUHidCreated = nativeCreateUHid();
                             return isUHidCreated;
+                        case 1:
+                            if (!isUInputCreated)
+                                isUInputCreated = nativeCreateUInput();
+                            return isUInputCreated;
                         default:
                             if (!isInputManagerCreated)
                                 isInputManagerCreated = getInputManager();

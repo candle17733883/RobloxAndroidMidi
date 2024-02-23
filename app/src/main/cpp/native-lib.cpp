@@ -166,30 +166,38 @@ Java_com_tile_tuoluoyi_GamePadNative_nativeUInputPressThumbL(JNIEnv *env, jclass
     write(uinput_fd, &inputEventSYN, sizeof(struct input_event));
 }
 
-
-//0x16, 0x01, 0x80, //   Logical Minimum (-32767)
-//0x26, 0xFF, 0x7F, //   Logical Maximum (32767)
-static unsigned char descrpition[] = {
+static unsigned char description[] = {
         0x05, 0x01,        // Usage Page (Generic Desktop Ctrls)
-        0x09, 0x05,        // Usage (Game Pad)
+        0x09, 0x06,        // Usage (Keyboard)
         0xA1, 0x01,        // Collection (Application)
-        0x85, 0x04,        //   Report ID (4)
-        0x05, 0x09,        //   Usage Page (Button)
-        0x19, 0x01,        //   Usage Minimum (0x01)
-        0x29, 0x10,        //   Usage Maximum (0x10)
+        0x05, 0x07,        //   Usage Page (Kbrd/Keypad)
+        0x19, 0xE0,        //   Usage Minimum (0xE0)
+        0x29, 0xE7,        //   Usage Maximum (0xE7)
         0x15, 0x00,        //   Logical Minimum (0)
         0x25, 0x01,        //   Logical Maximum (1)
         0x75, 0x01,        //   Report Size (1)
-        0x95, 0x10,        //   Report Count (16)
-        0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,Null State)
-        0x05, 0x01,        //   Usage Page (Generic Desktop Ctrls)
-        0x16, 0x01, 0xE0,  //   Logical Minimum (-32767)
-        0x26, 0xFF, 0x1F,  //   Logical Maximum (32767)
-        0x09, 0x32,        //   Usage (Z)
-        0x09, 0x35,        //   Usage (Rz)
-        0x75, 0x10,        //   Report Size (16)
-        0x95, 0x02,        //   Report Count (2)
-        0x81, 0x42,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,Null State)
+        0x95, 0x08,        //   Report Count (8)
+        0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+        0x95, 0x01,        //   Report Count (1)
+        0x75, 0x08,        //   Report Size (8)
+        0x81, 0x03,        //   Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+        0x95, 0x05,        //   Report Count (5)
+        0x75, 0x01,        //   Report Size (1)
+        0x05, 0x08,        //   Usage Page (LEDs)
+        0x19, 0x01,        //   Usage Minimum (Num Lock)
+        0x29, 0x05,        //   Usage Maximum (Kana)
+        0x91, 0x02,        //   Output (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+        0x95, 0x01,        //   Report Count (1)
+        0x75, 0x03,        //   Report Size (3)
+        0x91, 0x03,        //   Output (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+        0x95, 0x06,        //   Report Count (6)
+        0x75, 0x08,        //   Report Size (8)
+        0x15, 0x00,        //   Logical Minimum (0)
+        0x25, 0x65,        //   Logical Maximum (101)
+        0x05, 0x07,        //   Usage Page (Kbrd/Keypad)
+        0x19, 0x00,        //   Usage Minimum (0x00)
+        0x29, 0x65,        //   Usage Maximum (0x65)
+        0x81, 0x00,        //   Input (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
         0xC0,              // End Collection
 
 };
@@ -200,17 +208,17 @@ static struct uhid_event uhidEventXY;
 extern "C"
 JNIEXPORT jboolean JNICALL
 Java_com_tile_tuoluoyi_GamePadNative_nativeCreateUHid(JNIEnv *env, jclass clazz) {
-
+    __android_log_print(ANDROID_LOG_WARN, "MyTag", "HELLO WORLD THIS IS FROM JNI");
     if ((uhid_fd = open("/dev/uhid", O_RDWR | O_NDELAY)) < 0) {
         return false;//error process.
     }
     struct uhid_event ev;
     memset(&ev, 0, sizeof(uhid_event));
     ev.type = UHID_CREATE;
-    strcpy((char *) ev.u.create.name, "Xbox Wireless Controller");
-    ev.u.create.rd_data = descrpition;
-    ev.u.create.rd_size = sizeof(descrpition);
-    ev.u.create.bus = BUS_VIRTUAL;
+    strcpy((char *) ev.u.create.name, "uHidKeyboard");
+    ev.u.create.rd_data = description;
+    ev.u.create.rd_size = sizeof(description);
+    ev.u.create.bus = 0x03;
     ev.u.create.vendor = 0x1;
     ev.u.create.product = 0x1;
     ev.u.create.version = 0x1;
@@ -221,8 +229,8 @@ Java_com_tile_tuoluoyi_GamePadNative_nativeCreateUHid(JNIEnv *env, jclass clazz)
 
     memset(&uhidEventXY, 0, sizeof(uhid_event));
     uhidEventXY.type = UHID_INPUT;
-    uhidEventXY.u.input.size = 7;
-    uhidEventXY.u.input.data[0] = 0x4;
+    uhidEventXY.u.input.size = 8;
+    uhidEventXY.u.input.data[0] = 0x00;
 
     return true;
 }
@@ -242,52 +250,15 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_tile_tuoluoyi_GamePadNative_nativeUHidEvent(JNIEnv *env, jclass clazz, jint x_value,
                                                      jint y_value) {
-
-
-    if (y_value>32767) y_value = 32767;
-    else if (y_value<-32767) y_value = -32767;
-    if (x_value>32767) x_value = 32767;
-    else if (x_value<-32767) x_value = -32767;
-    uhidEventXY.u.input.data[3] = y_value & 0xFF;
-    uhidEventXY.u.input.data[4] = (y_value >> 8) & 0xFF;
-    uhidEventXY.u.input.data[5] = x_value & 0xFF;
-    uhidEventXY.u.input.data[6] = (x_value >> 8) & 0xFF;
-    write(uhid_fd, &uhidEventXY, sizeof(uhid_event));
-//    int sbsb = -1250;
-//    __android_log_print(ANDROID_LOG_INFO, "MyTag", "%d %08x %d", x_value > 0, x_value, x_value);
-
-//    bool posX = x_value > 0;
-//    bool posY = y_value > 0;
-//
-//    while (x_value != 0 || y_value != 0) {
-//        if (abs(x_value) >= 32767) {
-//            x_value = posX ? x_value - 32767 : x_value + 32767;
-//            uhidEventXY.u.input.data[5] = posX ? 0xFF : 0x01;
-//            uhidEventXY.u.input.data[6] = posX ? 0x7F : 0x80;
-//        } else if (x_value != 0) {
-//            uhidEventXY.u.input.data[5] = x_value & 0xFF;
-//            uhidEventXY.u.input.data[6] = (x_value >> 8) & 0xFF;
-//            x_value = 0;
-//        } else {
-//            uhidEventXY.u.input.data[5] = 0x00;
-//            uhidEventXY.u.input.data[6] = 0x00;
-//        }
-//        if (abs(y_value) >= 32767) {
-//            y_value = posY ? y_value - 32767 : y_value + 32767;
-//            uhidEventXY.u.input.data[3] = posY ? 0xFF : 0x01;
-//            uhidEventXY.u.input.data[4] = posY ? 0x7F : 0x80;
-//        } else if (y_value != 0) {
-//            uhidEventXY.u.input.data[3] = y_value & 0xFF;
-//            uhidEventXY.u.input.data[4] = (y_value >> 8) & 0xFF;
-//            y_value = 0;
-//        } else {
-//            uhidEventXY.u.input.data[3] = 0x00;
-//            uhidEventXY.u.input.data[4] = 0x00;
-//        }
-//        write(uhid_fd, &uhidEventXY, sizeof(uhid_event));
-//    }
-
-
+//    uhidEventXY.u.input.data[0] = 0x00;
+//    uhidEventXY.u.input.data[1] = 0x00;
+//    uhidEventXY.u.input.data[2] = 0x1D;
+//    uhidEventXY.u.input.data[3] = 0x00;
+//    uhidEventXY.u.input.data[4] = 0x00;
+//    uhidEventXY.u.input.data[5] = 0x00;
+//    uhidEventXY.u.input.data[6] = 0x00;
+//    uhidEventXY.u.input.data[7] = 0x00;
+//    write(uhid_fd, &uhidEventXY, sizeof(uhidEventXY));
 }
 
 
@@ -295,22 +266,51 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_tile_tuoluoyi_GamePadNative_nativeUHidPressTL(JNIEnv *env, jclass clazz,
                                                        jboolean pressed) {
-    pressed ? (uhidEventXY.u.input.data[1] |= 1 << 6) : (uhidEventXY.u.input.data[1] &= ~(1 << 6));
-    write(uhid_fd, &uhidEventXY, sizeof(uhid_event));
+    uhidEventXY.u.input.data[0] = 0x00;
+    uhidEventXY.u.input.data[1] = 0x00;
+    uhidEventXY.u.input.data[2] = 0x1D;
+    uhidEventXY.u.input.data[3] = 0x00;
+    uhidEventXY.u.input.data[4] = 0x00;
+    uhidEventXY.u.input.data[5] = 0x00;
+    uhidEventXY.u.input.data[6] = 0x00;
+    uhidEventXY.u.input.data[7] = 0x00;
+    write(uhid_fd, &uhidEventXY, sizeof(uhidEventXY));
+
+    __android_log_print(ANDROID_LOG_INFO, "MyTag", "HELLO WORLD THIS IS FROM JNI");
 }
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_tile_tuoluoyi_GamePadNative_nativeUHidPressTR(JNIEnv *env, jclass clazz,
                                                        jboolean pressed) {
-    pressed ? (uhidEventXY.u.input.data[1] |= 1 << 7) : (uhidEventXY.u.input.data[1] &= ~(1 << 7));
-    write(uhid_fd, &uhidEventXY, sizeof(uhid_event));
+    uhidEventXY.u.input.data[0] = 0x00;
+    uhidEventXY.u.input.data[1] = 0x00;
+    uhidEventXY.u.input.data[2] = 0x1D;
+    uhidEventXY.u.input.data[3] = 0x00;
+    uhidEventXY.u.input.data[4] = 0x00;
+    uhidEventXY.u.input.data[5] = 0x00;
+    uhidEventXY.u.input.data[6] = 0x00;
+    uhidEventXY.u.input.data[7] = 0x00;
+    write(uhid_fd, &uhidEventXY, sizeof(uhidEventXY));
+    __android_log_print(ANDROID_LOG_INFO, "MyTag", "HELLO WORLD THIS IS FROM JNI");
 }
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_tile_tuoluoyi_GamePadNative_nativeUHidPressThumbL(JNIEnv *env, jclass clazz,
                                                            jboolean pressed) {
-    pressed ? (uhidEventXY.u.input.data[2] |= 1 << 5) : (uhidEventXY.u.input.data[2] &= ~(1 << 5));
-    write(uhid_fd, &uhidEventXY, sizeof(uhid_event));
+//    pressed ? (uhidEventXY.u.input.data[2] |= 1 << 5) : (uhidEventXY.u.input.data[2] &= ~(1 << 5));
+//    write(uhid_fd, &uhidEventXY, sizeof(uhid_event));
 //    __android_log_print(ANDROID_LOG_INFO, "MyTag", "This is a log message from JNI%d",
 //                        uhidEventXY.u.input.data[2]);
+
+    uhidEventXY.u.input.data[0] = 0x00;
+    uhidEventXY.u.input.data[1] = 0x00;
+    uhidEventXY.u.input.data[2] = 0x1D;
+    uhidEventXY.u.input.data[3] = 0x00;
+    uhidEventXY.u.input.data[4] = 0x00;
+    uhidEventXY.u.input.data[5] = 0x00;
+    uhidEventXY.u.input.data[6] = 0x00;
+    uhidEventXY.u.input.data[7] = 0x00;
+    write(uhid_fd, &uhidEventXY, sizeof(uhidEventXY));
+
+//    __android_log_print(ANDROID_LOG_INFO, "MyTag", "HELLO WORLD THIS IS FROM JNI");
 }

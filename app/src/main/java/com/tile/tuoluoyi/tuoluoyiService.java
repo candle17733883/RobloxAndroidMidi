@@ -24,6 +24,7 @@ import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -74,6 +75,7 @@ public class tuoluoyiService extends AccessibilityService {
                     try {
                         iGamePad.changeMode(sp.getInt("currentMode", 0));
                         iGamePad.syncPrefs(invertX, invertY, sensityX, sensityY);
+                        Log.d("MyTag", "ATTEMPTING TO CREATE GAMEPAD IN HERE! TUOSERVICE");
                         isGamePadCreated = iGamePad.create();
                     } catch (RemoteException e) {
                         e.printStackTrace();
