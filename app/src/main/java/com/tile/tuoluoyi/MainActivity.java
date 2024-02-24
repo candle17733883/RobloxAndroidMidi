@@ -57,19 +57,27 @@ public class MainActivity extends Activity {
     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            BinderContainer binderContainer = intent.getParcelableExtra("binder");
-            IBinder binder = binderContainer.getBinder();
-            //如果binder已经失去活性了，则不再继续解析
-            if (!binder.pingBinder()) return;
-            isGyroOK = true;
-            B.setText(R.string.service_actived);
-            B.setTextColor(getColor(R.color.right));
-            B.setOnClickListener(view -> showHelp());
-            B.setOnLongClickListener(view -> {
-                showExit(binder);
-                return true;
-            });
-            findViewById(R.id.s1).setEnabled(true);
+            switch (intent.getAction()) {
+                case "intent.tuoluoyi.sendBinder":
+                    BinderContainer binderContainer = intent.getParcelableExtra("binder");
+                    IBinder binder = binderContainer.getBinder();
+                    //如果binder已经失去活性了，则不再继续解析
+                    if (!binder.pingBinder()) return;
+                    isGyroOK = true;
+                    B.setText(R.string.service_actived);
+                    B.setTextColor(getColor(R.color.right));
+                    B.setOnClickListener(view -> showHelp());
+                    B.setOnLongClickListener(view -> {
+                        showExit(binder);
+                        return true;
+                    });
+                    findViewById(R.id.s1).setEnabled(true);
+                    break;
+                case "intent.tuoluoyi.exit":
+                    Switch s1 = findViewById(R.id.s1);
+                    s1.setChecked(false);
+                    break;
+            }
         }
     };
 
@@ -137,9 +145,6 @@ public class MainActivity extends Activity {
             getWindow().getAttributes().width = getResources().getDisplayMetrics().heightPixels;
         }
 
-        //如果设备没有陀螺仪传感器，则退出程序
-        if (!isDeviceHasGyro()) return;
-
         //如果是第一次打开APP，则展示隐私政策弹窗
         if (getSharedPreferences("data", 0).getBoolean("first", true)) showPrivacy();
 
@@ -147,6 +152,7 @@ public class MainActivity extends Activity {
 
         //注册广播接收器，用来接收高权限的陀螺仪进程发来的含有binder的广播。收到广播就意味着陀螺仪进程启动了
         registerReceiver(mBroadcastReceiver, new IntentFilter("intent.tuoluoyi.sendBinder"));
+        registerReceiver(mBroadcastReceiver, new IntentFilter("intent.tuoluoyi.exit"));
         isBroadcastRegistered = true;
 
         checkNotiPowerPermission();//这个函数会申请授权通知权限和忽略电池优化
@@ -518,20 +524,6 @@ public class MainActivity extends Activity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private boolean isDeviceHasGyro() {
-        SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        List<Sensor> gyroSensors = sensorManager.getSensorList(Sensor.TYPE_GYROSCOPE);
-        if (gyroSensors.size() == 0) {
-            new AlertDialog.Builder(this)
-                    .setMessage(R.string.gyro_notfound)
-                    .setCancelable(false)
-                    .show();
-            new Handler().postDelayed(this::finish, 3000);
-            return false;
-        }
-        return true;
     }
 
 

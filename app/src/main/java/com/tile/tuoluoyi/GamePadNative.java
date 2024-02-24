@@ -54,7 +54,6 @@ public class GamePadNative {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                if (isUInputCreated) isUInputCreated = !nativeCloseUInput();
                 if (isUHidCreated) isUHidCreated = !nativeCloseUHid();
             }
         });
@@ -76,7 +75,6 @@ public class GamePadNative {
         }
 
 
-        if (isUInputCreated) isUInputCreated = !nativeCloseUInput();
         if (isUHidCreated) isUHidCreated = !nativeCloseUHid();
         System.out.println("Stop GamePad Service.\n");
     }
@@ -98,7 +96,7 @@ public class GamePadNative {
         properties = new MotionEvent.PointerProperties[1];
         properties[0] = new MotionEvent.PointerProperties();
         properties[0].id = 0;
-        properties[0].toolType = 0;
+        properties[0].toolType = MotionEvent.TOOL_TYPE_UNKNOWN;
         pointerCoords = new MotionEvent.PointerCoords[1];
         pointerCoords[0] = new MotionEvent.PointerCoords();
         pointerCoords[0].clear();
@@ -145,28 +143,7 @@ public class GamePadNative {
     }
 
 
-    static native boolean nativeCreateUInput();
-
-    static native void nativeUInputEvent(int xValue, int yValue);
-
-    static native void nativeUInputPressTL(boolean pressed);
-
-    static native void nativeUInputPressTR(boolean pressed);
-
-    static native void nativeUInputPressThumbL(boolean pressed);
-
-    static native boolean nativeCloseUInput();
-
-
     static native boolean nativeCreateUHid();
-
-    static native void nativeUHidEvent(int xValue, int yValue);
-
-    static native void nativeUHidPressTL(boolean pressed);
-
-    static native void nativeUHidPressTR(boolean pressed);
-
-    static native void nativeUHidPressThumbL(boolean pressed);
 
     static native boolean nativeCloseUHid();
 
@@ -178,207 +155,6 @@ public class GamePadNative {
         try {
             //生成binder
             IBinder binder = new IGamePad.Stub() {
-
-                @Override
-                public void changeMode(int mode) throws RemoteException {
-                    currentMode = mode;
-                }
-
-                @Override
-                public int getCurrentMode() throws RemoteException {
-                    return currentMode;
-                }
-
-                @Override
-                public void inputEvent(float xValue, float yValue) throws RemoteException {
-                    if (invertAll) {
-                        xValue = -xValue;
-                        yValue = -yValue;
-                    }
-                    switch (currentMode) {
-                        case 0:
-                            //原始陀螺仪数据乘以灵敏度，再加上上次陀螺仪数据四舍五入的差值
-                            final float nowX1 = sensitivityXMode1 * xValue + lastX;
-                            final float nowY1 = sensitivityYMode1 * yValue + lastY;
-                            //四舍五入之后的整数部分数值
-                            final int roundX1 = Math.round(nowX1);
-                            final int roundY1 = Math.round(nowY1);
-
-                            //lastX和lastY用来记录四舍五入的小数部分差值，下次获取的传感器数据会先加上此差值再参与计算
-                            lastX = nowX1 - roundX1;
-                            lastY = nowY1 - roundY1;
-
-                            nativeUHidEvent(roundX1, roundY1);
-                            break;
-                        case 1:
-                            //原始陀螺仪数据乘以灵敏度，再加上上次陀螺仪数据四舍五入的差值
-                            final float nowX0 = sensitivityXMode0 * xValue + lastX;
-                            final float nowY0 = sensitivityYMode0 * yValue + lastY;
-                            //四舍五入之后的整数部分数值
-                            final int roundX0 = Math.round(nowX0);
-                            final int roundY0 = Math.round(nowY0);
-
-                            //lastX和lastY用来记录四舍五入的小数部分差值，下次获取的传感器数据会先加上此差值再参与计算
-                            lastX = nowX0 - roundX0;
-                            lastY = nowY0 - roundY0;
-
-                            nativeUInputEvent(roundX0, roundY0);
-                            break;
-                        case 2:
-                            pointerCoords[0].setAxisValue(MotionEvent.AXIS_RZ, xValue * sensitivityXMode2);
-                            pointerCoords[0].setAxisValue(MotionEvent.AXIS_Z, yValue * sensitivityYMode2);
-                            MotionEvent event = MotionEvent.obtain(0, SystemClock.uptimeMillis(), MotionEvent.ACTION_MOVE, 1, properties, pointerCoords,
-                                    0, 0, 0, 0, 0, 0, InputDevice.SOURCE_JOYSTICK, 0);
-                            try {
-                                injectInputEventMethod.invoke(im, event, 0);
-                            } catch (IllegalAccessException | InvocationTargetException e) {
-                                e.printStackTrace();
-                            }
-
-                            break;
-                    }
-                }
-
-                @Override
-                public void syncPrefs(boolean invX, boolean invY, int sensityX, int sensityY) throws RemoteException {
-                    invertX = invX;
-                    invertY = invY;
-                    sensitivityXMode0 = ((invertX ? -1 : 1) << 16) * sensityX / 100f;
-                    sensitivityYMode0 = ((invertY ? -1 : 1) << 16) * sensityY / 100f;
-                    sensitivityXMode1 = ((invertX ? -1 : 1) << 12) * sensityX / 100f;
-                    sensitivityYMode1 = ((invertY ? -1 : 1) << 12) * sensityY / 100f;
-                    sensitivityXMode2 = (invertX ? -1 : 1) * sensityX / 100f;
-                    sensitivityYMode2 = (invertY ? -1 : 1) * sensityY / 100f;
-                }
-
-                @Override
-                public void pressTL(boolean pressed) throws RemoteException {
-                    switch (currentMode) {
-                        case 0:
-                            nativeUHidPressTL(pressed);
-                            break;
-                        case 1:
-                            nativeUInputPressTL(pressed);
-                            break;
-                        case 2:
-                            final long now = SystemClock.uptimeMillis();
-                            KeyEvent TLEvent = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BUTTON_L1, 0, 0, 0, 0, 0, InputDevice.SOURCE_JOYSTICK);
-                            try {
-                                if (pressed) {
-                                    TLEvent = KeyEvent.changeAction(TLEvent, KeyEvent.ACTION_DOWN);
-                                    injectInputEventMethod.invoke(im, TLEvent, 0);
-                                    TLEvent = KeyEvent.changeTimeRepeat(TLEvent, now, 1, KeyEvent.FLAG_LONG_PRESS);
-                                    injectInputEventMethod.invoke(im, TLEvent, 0);
-                                } else {
-                                    TLEvent = KeyEvent.changeAction(TLEvent, KeyEvent.ACTION_UP);
-                                    injectInputEventMethod.invoke(im, TLEvent, 0);
-                                }
-                            } catch (IllegalAccessException | InvocationTargetException e) {
-                                e.printStackTrace();
-                            }
-
-                    }
-
-                }
-
-                @Override
-                public void pressTR(boolean pressed) throws RemoteException {
-
-                    switch (currentMode) {
-                        case 0:
-                            nativeUHidPressTR(pressed);
-                            break;
-                        case 1:
-                            nativeUInputPressTR(pressed);
-                            break;
-                        case 2:
-                            final long now = SystemClock.uptimeMillis();
-                            KeyEvent TREvent = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BUTTON_R1, 0, 0, 0, 0, 0, InputDevice.SOURCE_JOYSTICK);
-                            try {
-                                if (pressed) {
-                                    TREvent = KeyEvent.changeAction(TREvent, KeyEvent.ACTION_DOWN);
-                                    injectInputEventMethod.invoke(im, TREvent, 0);
-                                    TREvent = KeyEvent.changeTimeRepeat(TREvent, now, 1, KeyEvent.FLAG_LONG_PRESS);
-                                    injectInputEventMethod.invoke(im, TREvent, 0);
-                                } else {
-                                    TREvent = KeyEvent.changeAction(TREvent, KeyEvent.ACTION_UP);
-                                    injectInputEventMethod.invoke(im, TREvent, 0);
-                                }
-                            } catch (IllegalAccessException | InvocationTargetException e) {
-                                e.printStackTrace();
-                            }
-
-                    }
-                }
-
-                @Override
-                public void pressThumbL(boolean pressed) throws RemoteException {
-
-                    switch (currentMode) {
-                        case 0:
-                            nativeUHidPressThumbL(pressed);
-                            break;
-                        case 1:
-                            nativeUInputPressThumbL(pressed);
-                            break;
-                        case 2:
-                            final long now = SystemClock.uptimeMillis();
-                            KeyEvent LSEvent = new KeyEvent(now, now, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BUTTON_THUMBL, 0, 0, 0, 0, 0, InputDevice.SOURCE_JOYSTICK);
-                            try {
-                                if (pressed) {
-                                    LSEvent = KeyEvent.changeAction(LSEvent, KeyEvent.ACTION_DOWN);
-                                    injectInputEventMethod.invoke(im, LSEvent, 0);
-                                    LSEvent = KeyEvent.changeTimeRepeat(LSEvent, now, 1, KeyEvent.FLAG_LONG_PRESS);
-                                    injectInputEventMethod.invoke(im, LSEvent, 0);
-                                } else {
-                                    LSEvent = KeyEvent.changeAction(LSEvent, KeyEvent.ACTION_UP);
-                                    injectInputEventMethod.invoke(im, LSEvent, 0);
-                                }
-                            } catch (IllegalAccessException | InvocationTargetException e) {
-                                e.printStackTrace();
-                            }
-
-                    }
-                }
-
-
-                @Override
-                public boolean close() throws RemoteException {
-                    if (isUInputCreated) isUInputCreated = !nativeCloseUInput();
-                    if (isUHidCreated) isUHidCreated = !nativeCloseUHid();
-                    return !(isUInputCreated || isUHidCreated);
-                }
-
-                @Override
-                public boolean create() throws RemoteException {
-                    switch (currentMode) {
-                        case 0:
-                            Log.d("MyTag", "HELLO WORLD THIS IS FROM GAMEPADNATIVE");
-                            if (!isUHidCreated)
-                                isUHidCreated = nativeCreateUHid();
-                            return isUHidCreated;
-                        case 1:
-                            if (!isUInputCreated)
-                                isUInputCreated = nativeCreateUInput();
-                            return isUInputCreated;
-                        default:
-                            if (!isInputManagerCreated)
-                                isInputManagerCreated = getInputManager();
-                            return isInputManagerCreated;
-                    }
-                }
-
-
-                @Override
-                public void closeAndExit() throws RemoteException {
-                    if (isUInputCreated) isUInputCreated = !nativeCloseUInput();
-                    if (isUHidCreated) isUHidCreated = !nativeCloseUHid();
-                    System.out.println("Stop GamePad Service.\n");
-                    System.exit(0);
-                }
-
-
-
                 @Override
                 public String pianoKey(int key, boolean isDown) throws RemoteException {
                     int status = 500;
@@ -396,6 +172,38 @@ public class GamePadNative {
                     } else {
                         return "Failure";
                     }
+                }
+
+                @Override
+                public void changeMode(int mode) throws RemoteException {
+                    currentMode = mode;
+                }
+
+                @Override
+                public int getCurrentMode() throws RemoteException {
+                    return currentMode;
+                }
+
+                @Override
+                public boolean close() throws RemoteException {
+                    if (isUHidCreated) isUHidCreated = !nativeCloseUHid();
+                    return !(isUHidCreated);
+                }
+
+                @Override
+                public boolean create() throws RemoteException {
+                    Log.d("MyTag", "HELLO WORLD THIS IS FROM GAMEPADNATIVE");
+                    if (!isUHidCreated)
+                        isUHidCreated = nativeCreateUHid();
+                    return isUHidCreated;
+                }
+
+
+                @Override
+                public void closeAndExit() throws RemoteException {
+                    if (isUHidCreated) isUHidCreated = !nativeCloseUHid();
+                    System.out.println("Stop GamePad Service.\n");
+                    System.exit(0);
                 }
             };
             //把binder填到一个可以用Intent来传递的容器中

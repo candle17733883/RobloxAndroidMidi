@@ -1,6 +1,7 @@
 package com.tile.tuoluoyi
 
 import android.accessibilityservice.AccessibilityService
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -14,9 +15,6 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.Icon
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.media.midi.MidiDeviceInfo
 import android.media.midi.MidiManager
@@ -42,23 +40,30 @@ import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
 
-class ConsoleList(private val context: Context) {
+class ConsoleList(private val Context: Context) {
     private val messages: MutableList<String>
+    private val currentContext: Context
 
     init {
         messages = ArrayList()
+        currentContext=Context
     }
 
     fun add(message: String) {
 //        messages.add(message)
 //        Display the message as a Toast
-//        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(
+                currentContext,
+                message,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
         Log.d("MyTag", message)
     }
 }
 
 class tuoluoyiService : AccessibilityService() {
-    val this_service = this
     var iGamePad: IGamePad? = null
     var binder: IBinder? = null
     var isBroadcastRegistered = false
@@ -84,7 +89,7 @@ class tuoluoyiService : AccessibilityService() {
     // MIDI RELATED OPTIONS
     var MIDIOutputPort: MidiOutputPort? = null
 //    var binding: ActivityMainBinding? = null
-    val consoleList = ConsoleList(this_service)
+    val consoleList = ConsoleList(this@tuoluoyiService)
 
     val mBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -112,7 +117,6 @@ class tuoluoyiService : AccessibilityService() {
 
                     try {
                         iGamePad?.changeMode(sp!!.getInt("currentMode", 0))
-                        iGamePad?.syncPrefs(invertX, invertY, sensityX, sensityY)
                         Log.d("MyTag", "ATTEMPTING TO CREATE GAMEPAD IN HERE! TUOSERVICE")
                         isGamePadCreated = iGamePad?.create() == true // Checks whether if the gamepad was created or not
                     } catch (e: RemoteException) {
@@ -139,7 +143,7 @@ class tuoluoyiService : AccessibilityService() {
 
                         if (deviceInfo == null) {
                             consoleList.add("FAILED TO FIND MIDI DEVICE!")
-                            disableSelf()
+                            sendBroadcast(Intent("intent.tuoluoyi.exit"))
                             return
                         }
 
@@ -226,8 +230,6 @@ class tuoluoyiService : AccessibilityService() {
 
                                                     try {
                                                         if (noteNumber >= 36 && noteNumber <= 96) {
-                                                            //iGamePad?.pianoKey(noteNumber, isDown)
-
                                                             iGamePad?.pianoKey(noteNumber, isDown)
                                                                 ?.let { consoleList.add(it) }
 //                                                          consoleList.add("Key pressed: IsDown $isDown, Note $noteNumber")
@@ -251,35 +253,23 @@ class tuoluoyiService : AccessibilityService() {
                             Handler(Looper.getMainLooper())
                         )
                         // END OF MIDI HANDLING LOGIC
-
-                        //注册传感器监听器
-                        mSensorMgr = getSystemService(SENSOR_SERVICE) as SensorManager
-                        val hasGyroSope = mSensorMgr!!.registerListener(
-                            gyroListener, mSensorMgr!!.getDefaultSensor(
-                                Sensor.TYPE_GYROSCOPE
-                            ),
-                            SensorManager.SENSOR_DELAY_FASTEST
-                        )
-                        if (!hasGyroSope) {
-                            Toast.makeText(context, R.string.gyro_notfound, Toast.LENGTH_SHORT)
-                                .show()
-                            disableSelf()
-                            return
-                        }
                         isGyroEnabled = true
 
                         //如果用户开启了”悬浮球“，则展示一个悬浮球。
                         if (sp!!.getBoolean("floatWindow", true)) {
                             showFloatWindow()
                         }
-                    } else Toast.makeText(context, R.string.connect_failed, Toast.LENGTH_SHORT)
-                        .show()
+                    } else {
+                        Toast.makeText(context, "'iGamePad?.create() == true' check failed", Toast.LENGTH_SHORT).show()
+                        Log.d("MyTag", "CONNECTON FAILED: $")
+                    }
                 }
             }
         }
     }
 
     //myListener用于实时更新设置项的值
+    // Listens for when the shared preferences change
     val myListener = OnSharedPreferenceChangeListener { sharedPreferences, s ->
         if (s == "x" || s == "y") return@OnSharedPreferenceChangeListener
         if (isFloatWindowExist) {
@@ -299,31 +289,6 @@ class tuoluoyiService : AccessibilityService() {
         invertY = sharedPreferences.getBoolean("invertY", false)
         sensityX = sharedPreferences.getInt("sensityX", 100)
         sensityY = sharedPreferences.getInt("sensityY", 100)
-        try {
-            iGamePad?.syncPrefs(invertX, invertY, sensityX, sensityY)
-        } catch (ignored: RemoteException) {
-        }
-    }
-
-    //gyroListener用于将陀螺仪数据转换为虚拟手柄的操控
-    val gyroListener: SensorEventListener = object : SensorEventListener {
-        override fun onSensorChanged(event: SensorEvent) {
-            try {
-                iGamePad?.inputEvent(event.values[1], -event.values[0])
-            } catch (ignored: Exception) {
-                if (isGyroEnabled) {
-                    mSensorMgr!!.unregisterListener(this)
-                    isGyroEnabled = false
-                }
-                if (!binder!!.pingBinder()) Toast.makeText(
-                    this@tuoluoyiService,
-                    "Binder Died!",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-
-        override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
     }
 
     override fun onServiceConnected() {
@@ -357,6 +322,7 @@ class tuoluoyiService : AccessibilityService() {
         isSharedPreferenceRegistered = true
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun showFloatWindow() {
         GetWidthHeight()
         floatWindowSize = TypedValue.applyDimension(
@@ -383,6 +349,8 @@ class tuoluoyiService : AccessibilityService() {
         view!!.visibility = if (rotation == 0 || rotation == 2) View.GONE else View.VISIBLE
         view!!.setImageResource(R.drawable.icon) //设置悬浮球的View
         //设置悬浮球的触摸响应
+
+        // Logic for handling our floating window
         view!!.setOnTouchListener(object : OnTouchListener {
             var lastX = 0f
             var lastY = 0f
@@ -415,42 +383,14 @@ class tuoluoyiService : AccessibilityService() {
                         //如果是单击，则暂停/恢复陀螺仪服务
                         if (!moved) {
                             if (System.currentTimeMillis() - downTime < 200) {
-                                if (isGyroEnabled) {
-                                    mSensorMgr!!.unregisterListener(gyroListener)
-                                    isGyroEnabled = false
-                                    Toast.makeText(
-                                        this@tuoluoyiService,
-                                        R.string.pause,
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    try {
-                                        iGamePad?.inputEvent(0f, 0f)
-                                    } catch (ignored: RemoteException) {
-                                    }
+                                if (isGyroEnabled) { // Make sure to change isGyroEnabled
+                                    // DISABLE HERE!
                                 } else {
-                                    mSensorMgr!!.registerListener(
-                                        gyroListener, mSensorMgr!!.getDefaultSensor(
-                                            Sensor.TYPE_GYROSCOPE
-                                        ), SensorManager.SENSOR_DELAY_FASTEST
-                                    )
-                                    isGyroEnabled = true
-                                    Toast.makeText(
-                                        this@tuoluoyiService,
-                                        R.string.resume,
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    // ENABLE HERE!
                                 }
                             } else {
                                 isThumbLPressed = !isThumbLPressed
-                                try {
-                                    iGamePad?.pressThumbL(isThumbLPressed)
-                                } catch (ignored: RemoteException) {
-                                }
-                                Toast.makeText(
-                                    this@tuoluoyiService,
-                                    "已帮您" + (if (isThumbLPressed) "按下" else "抬起") + "左摇杆键",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                // Implement logic here for when the floating window is held and then released
                                 view.setBackgroundColor(if (isThumbLPressed) Color.DKGRAY else Color.TRANSPARENT)
                             }
                         }
@@ -530,35 +470,24 @@ class tuoluoyiService : AccessibilityService() {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (isGyroEnabled) mSensorMgr!!.unregisterListener(gyroListener)
-        try {
-            iGamePad?.inputEvent(0f, 0f)
-            iGamePad!!.close()
-        } catch (ignored: Exception) {
-        }
-        if (isFloatWindowExist) windowManager!!.removeView(view)
+
+        MIDIOutputPort?.close()
+        iGamePad?.close()
+        if (isFloatWindowExist) windowManager?.removeView(view)
         if (isBroadcastRegistered) unregisterReceiver(mBroadcastReceiver)
-        if (isSharedPreferenceRegistered) sp!!.unregisterOnSharedPreferenceChangeListener(myListener)
+        if (isSharedPreferenceRegistered) sp?.unregisterOnSharedPreferenceChangeListener(myListener)
     }
 
     override fun onAccessibilityEvent(accessibilityEvent: AccessibilityEvent) {}
     override fun onInterrupt() {}
     override fun onKeyEvent(event: KeyEvent): Boolean {
         if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-            try {
-                iGamePad?.pressTL(event.action == KeyEvent.ACTION_DOWN)
-            } catch (e: RemoteException) {
-                e.printStackTrace()
-            }
-            return true
+            iGamePad?.pianoKey(120, event.action == KeyEvent.ACTION_DOWN)
+            return true // Consumes the key event
         }
         if (event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-            try {
-                iGamePad?.pressTR(event.action == KeyEvent.ACTION_DOWN)
-            } catch (e: RemoteException) {
-                e.printStackTrace()
-            }
-            return true
+            iGamePad?.pianoKey(120, event.action == KeyEvent.ACTION_DOWN)
+            return true // Consumes the key event
         }
         return super.onKeyEvent(event)
     }

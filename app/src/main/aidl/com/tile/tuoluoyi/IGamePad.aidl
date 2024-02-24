@@ -6,13 +6,13 @@ interface IGamePad {
 
     int getCurrentMode();
 
-    void inputEvent(float xValue,float yValue);
+//    void inputEvent(float xValue,float yValue);
 
-    void pressTL(boolean pressed);
+//    void pressTL(boolean pressed);
 
-    void pressTR(boolean pressed);
+//    void pressTR(boolean pressed);
 
-    void pressThumbL(boolean pressed);
+//    void pressThumbL(boolean pressed);
 
     boolean create();
 
@@ -20,7 +20,7 @@ interface IGamePad {
 
     void closeAndExit();
 
-    void syncPrefs(boolean invX,boolean invY,int sensityX,int sensityY);
+//    void syncPrefs(boolean invX,boolean invY,int sensityX,int sensityY);
 
     String pianoKey(int key, boolean isDown);
 }
