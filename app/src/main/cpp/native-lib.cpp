@@ -266,9 +266,11 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_tile_tuoluoyi_GamePadNative_nativeUHidPressTL(JNIEnv *env, jclass clazz,
                                                        jboolean pressed) {
+
+    //pressed ? (uhidEventXY.u.input.data[1] |= 1 << 6) : (uhidEventXY.u.input.data[1] &= ~(1 << 6));
     uhidEventXY.u.input.data[0] = 0x00;
     uhidEventXY.u.input.data[1] = 0x00;
-    uhidEventXY.u.input.data[2] = 0x1D;
+    uhidEventXY.u.input.data[2] = pressed ? 0x1D : 0x00;
     uhidEventXY.u.input.data[3] = 0x00;
     uhidEventXY.u.input.data[4] = 0x00;
     uhidEventXY.u.input.data[5] = 0x00;
@@ -284,7 +286,7 @@ Java_com_tile_tuoluoyi_GamePadNative_nativeUHidPressTR(JNIEnv *env, jclass clazz
                                                        jboolean pressed) {
     uhidEventXY.u.input.data[0] = 0x00;
     uhidEventXY.u.input.data[1] = 0x00;
-    uhidEventXY.u.input.data[2] = 0x1D;
+    uhidEventXY.u.input.data[2] = pressed ? 0x1D : 0x00;
     uhidEventXY.u.input.data[3] = 0x00;
     uhidEventXY.u.input.data[4] = 0x00;
     uhidEventXY.u.input.data[5] = 0x00;
@@ -304,7 +306,7 @@ Java_com_tile_tuoluoyi_GamePadNative_nativeUHidPressThumbL(JNIEnv *env, jclass c
 
     uhidEventXY.u.input.data[0] = 0x00;
     uhidEventXY.u.input.data[1] = 0x00;
-    uhidEventXY.u.input.data[2] = 0x1D;
+    uhidEventXY.u.input.data[2] = pressed ? 0x1D : 0x00;
     uhidEventXY.u.input.data[3] = 0x00;
     uhidEventXY.u.input.data[4] = 0x00;
     uhidEventXY.u.input.data[5] = 0x00;

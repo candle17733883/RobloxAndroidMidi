@@ -44,7 +44,10 @@ public class GamePadNative {
         System.loadLibrary("tuoluoyi");
 
         System.out.println("Start GamePad Service. Enter \"exit\" here at any time to exit.");
-        sendBinderToAppByStickyBroadcast();//发送binder给APP
+        sendBinderToAppByStickyBroadcast();//发送binder给APP // This is called ONLY once, it's a special type of broadcast called a sticky broadcast
+        // This tells other applications that this script has started
+        // Due to the type of broadcast, applications which weren't listening when the broadcast was sent initially will still receive
+        // this broadcast as soon as they start listening and hence it's called a sticky broadcast
 
 
         //加入JVM异常关闭时的处理程序
@@ -416,7 +419,7 @@ public class GamePadNative {
                     0,
                     null,
                     false,
-                    true,
+                    true, // Makes broadcast sticky(meaning even if no components were listening at the time, they will receive all what they missed upon listening)
                     -1
             );
 
