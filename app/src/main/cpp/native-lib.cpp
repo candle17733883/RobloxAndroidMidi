@@ -316,3 +316,28 @@ Java_com_tile_tuoluoyi_GamePadNative_nativeUHidPressThumbL(JNIEnv *env, jclass c
 
 //    __android_log_print(ANDROID_LOG_INFO, "MyTag", "HELLO WORLD THIS IS FROM JNI");
 }
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_tile_tuoluoyi_GamePadNative_nativePianoKey(JNIEnv *env,
+                                                    jclass thiz,
+                                                    jint keyNumber,
+                                                    jboolean isDown) {
+//    pressed ? (uhidEventXY.u.input.data[2] |= 1 << 5) : (uhidEventXY.u.input.data[2] &= ~(1 << 5));
+//    write(uhid_fd, &uhidEventXY, sizeof(uhid_event));
+//    __android_log_print(ANDROID_LOG_INFO, "MyTag", "This is a log message from JNI%d",
+//                        uhidEventXY.u.input.data[2]);
+
+        uhidEventXY.u.input.data[0] = 0x00;
+        uhidEventXY.u.input.data[1] = 0x00;
+        uhidEventXY.u.input.data[2] = isDown ? 0x1D : 0x00;
+        uhidEventXY.u.input.data[3] = 0x00;
+        uhidEventXY.u.input.data[4] = 0x00;
+        uhidEventXY.u.input.data[5] = 0x00;
+        uhidEventXY.u.input.data[6] = 0x00;
+        uhidEventXY.u.input.data[7] = 0x00;
+        write(uhid_fd, &uhidEventXY, sizeof(uhidEventXY));
+
+//    __android_log_print(ANDROID_LOG_INFO, "MyTag", "HELLO WORLD THIS IS FROM JNI");
+        return 0;
+}

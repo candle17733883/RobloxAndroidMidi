@@ -18,8 +18,14 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.media.midi.MidiDeviceInfo
+import android.media.midi.MidiManager
+import android.media.midi.MidiOutputPort
+import android.media.midi.MidiReceiver
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.RemoteException
 import android.util.DisplayMetrics
 import android.util.Log
@@ -32,8 +38,27 @@ import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.widget.ImageView
 import android.widget.Toast
+import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
+
+
+class ConsoleList(private val context: Context) {
+    private val messages: MutableList<String>
+
+    init {
+        messages = ArrayList()
+    }
+
+    fun add(message: String) {
+//        messages.add(message)
+//        Display the message as a Toast
+//        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        Log.d("MyTag", message)
+    }
+}
 
 class tuoluoyiService : AccessibilityService() {
+    val this_service = this
     var iGamePad: IGamePad? = null
     var binder: IBinder? = null
     var isBroadcastRegistered = false
@@ -55,6 +80,12 @@ class tuoluoyiService : AccessibilityService() {
     var SCREEN_HEIGHT = 0
     var view: ImageView? = null
     var mSensorMgr: SensorManager? = null // 声明一个传感管理器对象
+
+    // MIDI RELATED OPTIONS
+    var MIDIOutputPort: MidiOutputPort? = null
+//    var binding: ActivityMainBinding? = null
+    val consoleList = ConsoleList(this_service)
+
     val mBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
@@ -77,16 +108,150 @@ class tuoluoyiService : AccessibilityService() {
                     this@tuoluoyiService.binder = binder
                     //将binder转换为接口
                     iGamePad = IGamePad.Stub.asInterface(binder)
+
+
                     try {
                         iGamePad?.changeMode(sp!!.getInt("currentMode", 0))
                         iGamePad?.syncPrefs(invertX, invertY, sensityX, sensityY)
                         Log.d("MyTag", "ATTEMPTING TO CREATE GAMEPAD IN HERE! TUOSERVICE")
-                        isGamePadCreated = iGamePad?.create() == true
+                        isGamePadCreated = iGamePad?.create() == true // Checks whether if the gamepad was created or not
                     } catch (e: RemoteException) {
                         e.printStackTrace()
                     }
+
+
                     if (isGamePadCreated) {
                         Toast.makeText(context, R.string.connect_success, Toast.LENGTH_SHORT).show()
+
+                        Log.d("MyTag", "Attempting to access MIDI")
+                        // MIDI HANDLING LOGIC
+                        consoleList.add("Attempting to initialize MIDI service")
+                        val midiManager = getSystemService(MIDI_SERVICE) as MidiManager
+                        val devices: Array<MidiDeviceInfo> = midiManager.devices
+                        var deviceInfo: MidiDeviceInfo? = null
+
+                        for (device in devices) {
+                            if (device.outputPortCount > 0) {
+                                deviceInfo = device
+                                break
+                            }
+                        }
+
+                        if (deviceInfo == null) {
+                            consoleList.add("FAILED TO FIND MIDI DEVICE!")
+                            disableSelf()
+                            return
+                        }
+
+
+//                        refreshUI()
+
+                        val TouchIDPool = object  {
+                            private val unusedPool = ArrayList<Int>()
+                            private var nextId = 0
+
+                            init {
+                                // Initialize the pool with some initial touch IDs
+                                for (i in 0..9) {
+                                    unusedPool.add(nextId)
+                                    nextId++
+                                }
+                            }
+
+                            fun getTouchID(): Int? {
+                                if (unusedPool.isEmpty()) {
+                                    // Pool is exhausted, consider expanding or handling overflow
+                                    return null
+                                }
+                                return unusedPool.removeFirst()
+                            }
+
+                            fun releaseTouchID(touchID: Int) {
+                                unusedPool.add(touchID)
+                            }
+                        }
+                        var activeTouches = ConcurrentHashMap<Int, Int>()
+                        val robloxKeys = arrayOf<String>("1", "!", "2", "@", "3", "4", "$", "5", "%", "6", "^", "7", "8", "*", "9", "(", "0", "q", "Q", "w", "W", "e", "E", "r", "t", "T", "y", "Y", "u", "i", "I", "o", "O", "p", "P", "a", "s", "S", "d", "D", "f", "g", "G", "h", "H", "j", "J", "k", "l", "L", "z", "Z", "x", "c", "C", "v", "V", "b", "B", "n", "m")
+
+                        midiManager.openDevice(
+                            deviceInfo,
+                            { device ->
+                                if (device == null) {
+                                    consoleList.add("Failed to open device " + deviceInfo);
+                                    disableSelf()
+                                } else {
+                                    consoleList.add("Connected to $device")
+
+                                    class MyReceiver : MidiReceiver() {
+                                        private val NOTE_ON = 0x90
+                                        private val NOTE_OFF = 0x80
+                                        private val ALIVE: Byte = 0xFE.toByte()
+
+                                        private fun logByteArray(prefix: String, data: ByteArray, offset: Int, count: Int) {
+                                            val builder = StringBuilder(prefix)
+                                            for (i in 0 until count) {
+                                                builder.append(String.format("0x%02X", data[offset + i]))
+                                                if (i != count - 1) {
+                                                    builder.append(", ")
+                                                }
+                                            }
+                                            consoleList.add(builder.toString())
+                                        }
+
+                                        @Throws(IOException::class)
+                                        override fun onSend(
+                                            data: ByteArray, offset: Int,
+                                            count: Int, timestamp: Long
+                                        ) {
+                                            // Ignore the alive signal
+                                            if (data[offset] == ALIVE) {
+                                                return
+                                            }
+
+                                            for (i in offset until offset + count) {
+                                                val byte = data[i].toInt() and 0xFF
+                                                if (byte >= 0x80) { // Status byte
+                                                    val messageType = byte and 0xF0
+                                                    val channel = byte and 0x0F + 1
+                                                    val noteNumber = data[i + 1].toInt()
+
+                                                    var isDown: Boolean = false
+                                                    if (messageType == NOTE_ON) {
+                                                        isDown = true
+                                                    } else if (messageType == NOTE_OFF) {
+                                                        isDown = false
+                                                    } else {
+                                                        continue
+                                                    }
+
+                                                    try {
+                                                        if (noteNumber >= 36 && noteNumber <= 96) {
+                                                            //iGamePad?.pianoKey(noteNumber, isDown)
+
+                                                            iGamePad?.pianoKey(noteNumber, isDown)
+                                                                ?.let { consoleList.add(it) }
+//                                                          consoleList.add("Key pressed: IsDown $isDown, Note $noteNumber")
+                                                        }
+                                                    } catch (exception: Exception) {
+                                                        val errMsg = "ERROR ISDOWN $isDown: $exception"
+
+                                                        consoleList.add(errMsg)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    MIDIOutputPort?.close()
+                                    MIDIOutputPort = device.openOutputPort(0)
+                                    MIDIOutputPort?.connect(MyReceiver())
+
+                                }
+                            },
+                            Handler(Looper.getMainLooper())
+                        )
+                        // END OF MIDI HANDLING LOGIC
+
                         //注册传感器监听器
                         mSensorMgr = getSystemService(SENSOR_SERVICE) as SensorManager
                         val hasGyroSope = mSensorMgr!!.registerListener(

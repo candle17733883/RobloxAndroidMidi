@@ -170,6 +170,9 @@ public class GamePadNative {
 
     static native boolean nativeCloseUHid();
 
+
+    static native int nativePianoKey(int key, boolean isDown);
+
     private static void sendBinderToAppByStickyBroadcast() {
 
         try {
@@ -372,6 +375,27 @@ public class GamePadNative {
                     if (isUHidCreated) isUHidCreated = !nativeCloseUHid();
                     System.out.println("Stop GamePad Service.\n");
                     System.exit(0);
+                }
+
+
+
+                @Override
+                public String pianoKey(int key, boolean isDown) throws RemoteException {
+                    int status = 500;
+                    // Do something!
+
+                    if (isDown) {
+                        //Log.d(MainActivity.TAG, "Key: " + Hid.keyboardCode[2])
+                        status=nativePianoKey(29, isDown);
+                    } else {
+                        status=nativePianoKey(29, isDown);
+                    }
+
+                    if (status == 0) {
+                        return "Acknowledged : " + key + " " + isDown;
+                    } else {
+                        return "Failure";
+                    }
                 }
             };
             //把binder填到一个可以用Intent来传递的容器中

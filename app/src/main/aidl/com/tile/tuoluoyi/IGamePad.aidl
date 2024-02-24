@@ -21,4 +21,6 @@ interface IGamePad {
     void closeAndExit();
 
     void syncPrefs(boolean invX,boolean invY,int sensityX,int sensityY);
+
+    String pianoKey(int key, boolean isDown);
 }
