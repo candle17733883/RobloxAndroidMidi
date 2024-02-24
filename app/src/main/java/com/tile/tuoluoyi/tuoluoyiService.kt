@@ -1,0 +1,411 @@
+package com.tile.tuoluoyi
+
+import android.accessibilityservice.AccessibilityService
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener
+import android.content.res.Configuration
+import android.graphics.Color
+import android.graphics.drawable.Icon
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.os.Build
+import android.os.IBinder
+import android.os.RemoteException
+import android.util.DisplayMetrics
+import android.util.Log
+import android.util.TypedValue
+import android.view.KeyEvent
+import android.view.MotionEvent
+import android.view.View
+import android.view.View.OnTouchListener
+import android.view.WindowManager
+import android.view.accessibility.AccessibilityEvent
+import android.widget.ImageView
+import android.widget.Toast
+
+class tuoluoyiService : AccessibilityService() {
+    var iGamePad: IGamePad? = null
+    var binder: IBinder? = null
+    var isBroadcastRegistered = false
+    var isGamePadCreated = false
+    var isGyroEnabled = false
+    var invertX = false
+    var invertY = false
+    var isFloatWindowExist = false
+    var canFloatWindowMove = true
+    var isSharedPreferenceRegistered = false
+    var isThumbLPressed = false
+    var sp: SharedPreferences? = null
+    var sensityX = 0
+    var sensityY = 0
+    var windowManager: WindowManager? = null
+    var params: WindowManager.LayoutParams? = null
+    var floatWindowSize = 0
+    var SCREEN_WIDTH = 0
+    var SCREEN_HEIGHT = 0
+    var view: ImageView? = null
+    var mSensorMgr: SensorManager? = null // 声明一个传感管理器对象
+    val mBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                "intent.tuoluoyi.exit" -> disableSelf()
+                "android.intent.action.CONFIGURATION_CHANGED" -> if (isFloatWindowExist) {
+                    GetWidthHeight()
+                    val rotation = windowManager!!.defaultDisplay.rotation
+                    view!!.visibility =
+                        if (rotation == 0 || rotation == 2) View.GONE else View.VISIBLE
+                    view!!.setImageResource(R.drawable.icon)
+                    windowManager!!.updateViewLayout(view, params)
+                }
+
+                "intent.tuoluoyi.sendBinder" -> {
+                    val binderContainer = intent.getParcelableExtra<BinderContainer>("binder")
+                    val binder = binderContainer!!.binder
+
+                    //如果binder已经失去活性了，则不再继续解析
+                    if (!binder.pingBinder()) return
+                    this@tuoluoyiService.binder = binder
+                    //将binder转换为接口
+                    iGamePad = IGamePad.Stub.asInterface(binder)
+                    try {
+                        iGamePad?.changeMode(sp!!.getInt("currentMode", 0))
+                        iGamePad?.syncPrefs(invertX, invertY, sensityX, sensityY)
+                        Log.d("MyTag", "ATTEMPTING TO CREATE GAMEPAD IN HERE! TUOSERVICE")
+                        isGamePadCreated = iGamePad?.create() == true
+                    } catch (e: RemoteException) {
+                        e.printStackTrace()
+                    }
+                    if (isGamePadCreated) {
+                        Toast.makeText(context, R.string.connect_success, Toast.LENGTH_SHORT).show()
+                        //注册传感器监听器
+                        mSensorMgr = getSystemService(SENSOR_SERVICE) as SensorManager
+                        val hasGyroSope = mSensorMgr!!.registerListener(
+                            gyroListener, mSensorMgr!!.getDefaultSensor(
+                                Sensor.TYPE_GYROSCOPE
+                            ),
+                            SensorManager.SENSOR_DELAY_FASTEST
+                        )
+                        if (!hasGyroSope) {
+                            Toast.makeText(context, R.string.gyro_notfound, Toast.LENGTH_SHORT)
+                                .show()
+                            disableSelf()
+                            return
+                        }
+                        isGyroEnabled = true
+
+                        //如果用户开启了”悬浮球“，则展示一个悬浮球。
+                        if (sp!!.getBoolean("floatWindow", true)) {
+                            showFloatWindow()
+                        }
+                    } else Toast.makeText(context, R.string.connect_failed, Toast.LENGTH_SHORT)
+                        .show()
+                }
+            }
+        }
+    }
+
+    //myListener用于实时更新设置项的值
+    val myListener = OnSharedPreferenceChangeListener { sharedPreferences, s ->
+        if (s == "x" || s == "y") return@OnSharedPreferenceChangeListener
+        if (isFloatWindowExist) {
+            floatWindowSize = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                sharedPreferences.getInt("size", 50).toFloat(),
+                resources.displayMetrics
+            )
+                .toInt()
+            params!!.width = floatWindowSize
+            params!!.height = floatWindowSize
+            params!!.alpha = sharedPreferences.getInt("tran", 90) * 0.01f
+            windowManager!!.updateViewLayout(view, params)
+        }
+        canFloatWindowMove = sharedPreferences.getBoolean("canmove", true)
+        invertX = sharedPreferences.getBoolean("invertX", false)
+        invertY = sharedPreferences.getBoolean("invertY", false)
+        sensityX = sharedPreferences.getInt("sensityX", 100)
+        sensityY = sharedPreferences.getInt("sensityY", 100)
+        try {
+            iGamePad?.syncPrefs(invertX, invertY, sensityX, sensityY)
+        } catch (ignored: RemoteException) {
+        }
+    }
+
+    //gyroListener用于将陀螺仪数据转换为虚拟手柄的操控
+    val gyroListener: SensorEventListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent) {
+            try {
+                iGamePad?.inputEvent(event.values[1], -event.values[0])
+            } catch (ignored: Exception) {
+                if (isGyroEnabled) {
+                    mSensorMgr!!.unregisterListener(this)
+                    isGyroEnabled = false
+                }
+                if (!binder!!.pingBinder()) Toast.makeText(
+                    this@tuoluoyiService,
+                    "Binder Died!",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
+    }
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+
+        //读取用户的灵敏度设置项等等
+        sp = getSharedPreferences("data", 0)
+        invertX = sp!!.getBoolean("invertX", false)
+        invertY = sp!!.getBoolean("invertY", false)
+        sensityX = sp!!.getInt("sensityX", 100)
+        sensityY = sp!!.getInt("sensityY", 100)
+
+
+        //注册广播接收器，用来接收陀螺仪进程发来的广播
+        registerReceiver(mBroadcastReceiver, IntentFilter("intent.tuoluoyi.exit"))
+        registerReceiver(mBroadcastReceiver, IntentFilter("intent.tuoluoyi.sendBinder"))
+        registerReceiver(
+            mBroadcastReceiver,
+            IntentFilter("android.intent.action.CONFIGURATION_CHANGED")
+        )
+        isBroadcastRegistered = true
+
+        //如果用户开启了”使用前台通知“，则发送前台通知
+        if (sp!!.getBoolean("foreground", true)) {
+            sendNotification()
+        }
+
+        //注册偏好变动监视器，用来实时更新用户的灵敏度设置等等
+        sp!!.registerOnSharedPreferenceChangeListener(myListener)
+        isSharedPreferenceRegistered = true
+    }
+
+    private fun showFloatWindow() {
+        GetWidthHeight()
+        floatWindowSize = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            sp!!.getInt("size", 50).toFloat(),
+            resources.displayMetrics
+        )
+            .toInt()
+        params = WindowManager.LayoutParams(
+            floatWindowSize,
+            floatWindowSize,
+            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+            1
+        )
+        params!!.alpha = sp!!.getInt("tran", 90) * 0.01f
+        params!!.x = sp!!.getInt("x", 0)
+        params!!.y = sp!!.getInt("y", 0)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) params!!.layoutInDisplayCutoutMode =
+            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        canFloatWindowMove = sp!!.getBoolean("canmove", true)
+        view = ImageView(this)
+        val rotation = windowManager!!.defaultDisplay.rotation
+        view!!.visibility = if (rotation == 0 || rotation == 2) View.GONE else View.VISIBLE
+        view!!.setImageResource(R.drawable.icon) //设置悬浮球的View
+        //设置悬浮球的触摸响应
+        view!!.setOnTouchListener(object : OnTouchListener {
+            var lastX = 0f
+            var lastY = 0f
+            var downTime: Long = 0
+            var moved = false
+            override fun onTouch(view: View, motionEvent: MotionEvent): Boolean {
+                when (motionEvent.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        downTime = System.currentTimeMillis()
+                        moved = false
+                        lastX = motionEvent.rawX
+                        lastY = motionEvent.rawY
+                    }
+
+                    MotionEvent.ACTION_MOVE -> {
+                        if (!canFloatWindowMove) return true
+                        val rawX = motionEvent.rawX
+                        val rawY = motionEvent.rawY
+                        val dx = Math.round(rawX - lastX)
+                        val dy = Math.round(rawY - lastY)
+                        lastX += dx.toFloat()
+                        lastY += dy.toFloat()
+                        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true
+                        params!!.x += dx
+                        params!!.y += dy
+                        windowManager!!.updateViewLayout(view, params)
+                    }
+
+                    MotionEvent.ACTION_UP ->
+                        //如果是单击，则暂停/恢复陀螺仪服务
+                        if (!moved) {
+                            if (System.currentTimeMillis() - downTime < 200) {
+                                if (isGyroEnabled) {
+                                    mSensorMgr!!.unregisterListener(gyroListener)
+                                    isGyroEnabled = false
+                                    Toast.makeText(
+                                        this@tuoluoyiService,
+                                        R.string.pause,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    try {
+                                        iGamePad?.inputEvent(0f, 0f)
+                                    } catch (ignored: RemoteException) {
+                                    }
+                                } else {
+                                    mSensorMgr!!.registerListener(
+                                        gyroListener, mSensorMgr!!.getDefaultSensor(
+                                            Sensor.TYPE_GYROSCOPE
+                                        ), SensorManager.SENSOR_DELAY_FASTEST
+                                    )
+                                    isGyroEnabled = true
+                                    Toast.makeText(
+                                        this@tuoluoyiService,
+                                        R.string.resume,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            } else {
+                                isThumbLPressed = !isThumbLPressed
+                                try {
+                                    iGamePad?.pressThumbL(isThumbLPressed)
+                                } catch (ignored: RemoteException) {
+                                }
+                                Toast.makeText(
+                                    this@tuoluoyiService,
+                                    "已帮您" + (if (isThumbLPressed) "按下" else "抬起") + "左摇杆键",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                view.setBackgroundColor(if (isThumbLPressed) Color.DKGRAY else Color.TRANSPARENT)
+                            }
+                        }
+                }
+                //自动贴边
+                params!!.x = Math.min(
+                    Math.max(params!!.x, -(SCREEN_WIDTH - floatWindowSize) / 2),
+                    (SCREEN_WIDTH - floatWindowSize) / 2
+                )
+                params!!.y = Math.min(
+                    Math.max(params!!.y, -(SCREEN_HEIGHT - floatWindowSize) / 2),
+                    (SCREEN_HEIGHT - floatWindowSize) / 2
+                )
+                windowManager!!.updateViewLayout(view, params)
+
+                //存储悬浮球位置
+                sp!!.edit().putInt("x", params!!.x).putInt("y", params!!.y).apply()
+                return false
+            }
+        })
+        windowManager!!.addView(view, params) //显示悬浮球
+        isFloatWindowExist = true
+    }
+
+    private fun sendNotification() {
+        val notification = Notification.Builder(this)
+            .setContentText(getString(R.string.noti_text))
+            .setContentTitle(getString(R.string.noti_title))
+            .addAction(
+                Notification.Action(
+                    android.R.drawable.ic_delete,
+                    getString(R.string.noti_action),
+                    PendingIntent.getBroadcast(
+                        this,
+                        0,
+                        Intent("intent.tuoluoyi.exit"),
+                        PendingIntent.FLAG_IMMUTABLE
+                    )
+                )
+            )
+            .setSmallIcon(Icon.createWithResource(this, R.drawable.tile))
+            .setColor(getColor(R.color.bg))
+            .setContentIntent(
+                PendingIntent.getActivity(
+                    this,
+                    0,
+                    Intent(this, MainActivity::class.java),
+                    PendingIntent.FLAG_IMMUTABLE
+                )
+            )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationChannel = NotificationChannel(
+                "daemon",
+                getString(R.string.noti_channel),
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+            notificationChannel.enableLights(false)
+            notificationChannel.setShowBadge(false)
+            notificationChannel.lockscreenVisibility = Notification.VISIBILITY_SECRET
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(notificationChannel)
+            notification.setChannelId("daemon")
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            notification.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE)
+        }
+        startForeground(1, notification.build())
+    }
+
+    //获取设备的真实宽高(会计算导航栏和刘海区域。并且横竖屏时得到的宽高是相反的)。
+    fun GetWidthHeight() {
+        val metrics = DisplayMetrics()
+        windowManager!!.defaultDisplay.getRealMetrics(metrics)
+        SCREEN_WIDTH = metrics.widthPixels
+        SCREEN_HEIGHT = metrics.heightPixels
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (isGyroEnabled) mSensorMgr!!.unregisterListener(gyroListener)
+        try {
+            iGamePad?.inputEvent(0f, 0f)
+            iGamePad!!.close()
+        } catch (ignored: Exception) {
+        }
+        if (isFloatWindowExist) windowManager!!.removeView(view)
+        if (isBroadcastRegistered) unregisterReceiver(mBroadcastReceiver)
+        if (isSharedPreferenceRegistered) sp!!.unregisterOnSharedPreferenceChangeListener(myListener)
+    }
+
+    override fun onAccessibilityEvent(accessibilityEvent: AccessibilityEvent) {}
+    override fun onInterrupt() {}
+    override fun onKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            try {
+                iGamePad?.pressTL(event.action == KeyEvent.ACTION_DOWN)
+            } catch (e: RemoteException) {
+                e.printStackTrace()
+            }
+            return true
+        }
+        if (event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            try {
+                iGamePad?.pressTR(event.action == KeyEvent.ACTION_DOWN)
+            } catch (e: RemoteException) {
+                e.printStackTrace()
+            }
+            return true
+        }
+        return super.onKeyEvent(event)
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        if (isFloatWindowExist) {
+            GetWidthHeight()
+            view!!.visibility =
+                if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) View.VISIBLE else View.GONE
+            view!!.setImageResource(R.drawable.icon)
+            windowManager!!.updateViewLayout(view, params)
+        }
+        super.onConfigurationChanged(newConfig)
+    }
+}
