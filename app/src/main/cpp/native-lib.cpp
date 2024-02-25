@@ -112,12 +112,12 @@ Java_com_tile_tuoluoyi_GamePadNative_nativePianoKey(JNIEnv *env,
         uhidEventXY.u.input.data[0] = 0x00;
         uhidEventXY.u.input.data[1] = 0x00;
         uhidEventXY.u.input.data[2] = isDown ? 0x1D : 0x00;
-        uhidEventXY.u.input.data[3] = 0x00;
+        uhidEventXY.u.input.data[3] = isDown ? 0x1C : 0x00;
         uhidEventXY.u.input.data[4] = 0x00;
         uhidEventXY.u.input.data[5] = 0x00;
         uhidEventXY.u.input.data[6] = 0x00;
         uhidEventXY.u.input.data[7] = 0x00;
-        write(uhid_fd, &uhidEventXY, sizeof(uhidEventXY));
+        write(uhid_fd, &uhidEventXY, sizeof(uhid_event));
 
 //    __android_log_print(ANDROID_LOG_INFO, "MyTag", "HELLO WORLD THIS IS FROM JNI");
         return 0;
