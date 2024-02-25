@@ -51,7 +51,7 @@ import rikka.shizuku.Shizuku;
 
 public class MainActivity extends Activity {
 
-    boolean isGyroOK = false, isListenerAdded = false, isBroadcastRegistered = false;
+    boolean isListenerAdded = false, isBroadcastRegistered = false;
     Button B;
     private final Shizuku.OnRequestPermissionResultListener REQUEST_PERMISSION_RESULT_LISTENER = (requestCode, grantResult) -> check();
     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
@@ -63,7 +63,6 @@ public class MainActivity extends Activity {
                     IBinder binder = binderContainer.getBinder();
                     //如果binder已经失去活性了，则不再继续解析
                     if (!binder.pingBinder()) return;
-                    isGyroOK = true;
                     B.setText(R.string.service_actived);
                     B.setTextColor(getColor(R.color.right));
                     B.setOnClickListener(view -> showHelp());
@@ -196,11 +195,7 @@ public class MainActivity extends Activity {
 
             if (!((PowerManager) getSystemService(Service.POWER_SERVICE)).isIgnoringBatteryOptimizations(getPackageName()))
                 startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + getPackageName())));
-            if (!isGyroOK) {
-                s1.setChecked(false);
-                Toast.makeText(MainActivity.this, R.string.service_not_active, Toast.LENGTH_SHORT).show();
-                return;
-            }
+
 
             if (sp.getBoolean("foreground", true) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).areNotificationsEnabled()) {
                 s1.setChecked(false);
