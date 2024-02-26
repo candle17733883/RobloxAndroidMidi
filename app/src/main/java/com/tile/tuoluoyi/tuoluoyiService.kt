@@ -99,7 +99,7 @@ class tuoluoyiService : AccessibilityService() {
                     GetWidthHeight()
                     val rotation = windowManager!!.defaultDisplay.rotation
                     view!!.visibility = View.VISIBLE
-                    view!!.setImageResource(R.drawable.icon)
+                    view!!.setImageResource(R.drawable.cropped_circular_dragon)
                     windowManager!!.updateViewLayout(view, params)
                 }
 
@@ -274,7 +274,7 @@ class tuoluoyiService : AccessibilityService() {
         if (isFloatWindowExist) {
             floatWindowSize = TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
-                sharedPreferences.getInt("size", 50).toFloat(),
+                70.toFloat(),
                 resources.displayMetrics
             )
                 .toInt()
@@ -326,7 +326,7 @@ class tuoluoyiService : AccessibilityService() {
         GetWidthHeight()
         floatWindowSize = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
-            sp!!.getInt("size", 50).toFloat(),
+            70.toFloat(),
             resources.displayMetrics
         )
             .toInt()
@@ -346,7 +346,7 @@ class tuoluoyiService : AccessibilityService() {
         view = ImageView(this)
         val rotation = windowManager!!.defaultDisplay.rotation
         view!!.visibility = if (rotation == 0 || rotation == 2) View.GONE else View.VISIBLE
-        view!!.setImageResource(R.drawable.icon) //设置悬浮球的View
+        view!!.setImageResource(R.drawable.cropped_circular_dragon) //设置悬浮球的View
         //设置悬浮球的触摸响应
 
         // Logic for handling our floating window
@@ -434,7 +434,7 @@ class tuoluoyiService : AccessibilityService() {
                     )
                 )
             )
-            .setSmallIcon(Icon.createWithResource(this, R.drawable.tile))
+            .setSmallIcon(Icon.createWithResource(this, R.drawable.cropped_circular_dragon))
             .setColor(getColor(R.color.bg))
             .setContentIntent(
                 PendingIntent.getActivity(
@@ -500,7 +500,7 @@ class tuoluoyiService : AccessibilityService() {
             GetWidthHeight()
             view!!.visibility =
                 if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) View.VISIBLE else View.GONE
-            view!!.setImageResource(R.drawable.icon)
+            view!!.setImageResource(R.drawable.cropped_circular_dragon)
             windowManager!!.updateViewLayout(view, params)
         }
         super.onConfigurationChanged(newConfig)

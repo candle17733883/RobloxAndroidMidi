@@ -14,7 +14,7 @@
     -->
     <shortcut
         android:enabled="true"
-        android:icon="@drawable/icon"
+        android:icon="@drawable/cropped_circular_dragon"
         android:shortcutId="ScrOff"
         android:shortcutShortLabel="@string/shortcut_off">
         <intent
@@ -27,7 +27,7 @@
 
     <shortcut
         android:enabled="true"
-        android:icon="@drawable/icon"
+        android:icon="@drawable/cropped_circular_dragon"
         android:shortcutId="MyCollection"
         android:shortcutShortLabel="@string/shortcut_on">
         <intent

@@ -69,8 +69,8 @@
     <string name="noti_title">Service is running…</string>
     <string name="noti_action">Stop service</string>
     <string name="noti_channel">Gyro Notification</string>
-    <string name="app_name">MC Gyro</string>
-    <string name="tile_name">Gyro</string>
+    <string name="app_name">Roblox Android Midi</string>
+    <string name="tile_name">Roblox Android Midi</string>
     <string name="manaual_open">Please open my accessibility service</string>
     <string name="change_mode">ChangeToMode</string>
 </resources>
