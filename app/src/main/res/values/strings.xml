@@ -2,22 +2,22 @@
 <resources>
     <string name="shortcut_off">Stop Service</string>
     <string name="shortcut_on">Start Service</string>
-    <string name="click_to_active">Click here to activate</string>
-    <string name="service_state">Service state:</string>
+    <string name="click_to_active">Activate Virtual Keyboard</string>
+    <string name="service_state">MIDI Service</string>
     <string name="send_notification">Service Notification</string>
     <string name="invert_x">X-axis reverse</string>
     <string name="invert_y">Y-axis reverse</string>
     <string name="sensity_x">X-axis sensitivity</string>
     <string name="sensity_y">Y-axis sensitivity</string>
-    <string name="show_floatwindow">Show floating ball in landscape</string>
+    <string name="show_floatwindow">Show floating ball</string>
     <string name="lock_floatwindow">Lock floating ball position</string>
     <string name="tran_floatwindow">floating ball opacity</string>
     <string name="size_floatwindow">floating ball size</string>
     <string name="service_actived">Long Press To Change Mode</string>
-    <string name="deactive_service">Change Injection Mode</string>
-    <string name="deactive_service_text">Mode 1 has the best performance. Mode 2 limits the rotation speed of the camera view.Mode 3 has a visible delay to the naked eye.</string>
+    <string name="deactive_service">Are you sure?</string>
+    <string name="deactive_service_text">Take note that the Roblox app automatically restarts itself upon the removal of a computer keyboard.</string>
     <string name="back">back</string>
-    <string name="deactive">deactivate</string>
+    <string name="deactive">Deactivate Virtual Keyboard</string>
     <string name="deactive_success">Service deactivated.</string>
     <string name="privacy_title">Privacy</string>
     <string name="agree">agree</string>
@@ -35,7 +35,32 @@
     <string name="shizuku_notready">Shizuku not running</string>
     <string name="help_title">Help</string>
     <string name="ok">OK!</string>
-    <string name="help_text">This APP can create a virtual GamePad and convert real-time gyroscope data to the GamePad\'s right stick within 0.05ms。\n\nIn simple terms, you can use the gyroscope to play games that support GamePad, such as Minecraft. These games will mistakenly recognize that there is a GamePad controlling the movement of the perspective, while the phone\'s gyroscope is the real controller.\n\nHere are some issues and answers when using this app to play Minecraft:\n\n1.The gyroscope sensitivity is different when walking and stopping?\nAnswer: Please find the "Controller" section in Minecraft settings, adjust the \"Sensitivity\" to about 25.\n\n2.Cannot open windows such as backpack, workbench, chat box, villager trading, etc.?\nAnswer: Click on the floating ball to temporarily pause the gyroscope.\n\n3.After turning off the gyroscope, the game perspective is always biased towards a certain direction?\nAnswer: First click on the floating ball to pause the gyroscope, and then turn off the gyroscope.\n\n4.Is there a high delay in gyroscope operation?\nAnswer: If your phone does not have a high refresh rate, both touch and gyroscope operations will have a longer delay. You can swipe left and right quickly with your fingers to determine whether there is a delay in touch operations, and determine whether the delay comes from the device itself or from my program. If you confirm that there is no delay in touch operations but there is a delay in gyroscope operations, you can provide feedback to me.\n\n5.Will using the gyroscope in online PVP games trigger an anti-cheating detection?\nAnswer: Only external devices can be detected.\n</string>
+    <string name="help_text">https://github.com/EDLLT/RobloxAndroidMidi\n\nThis is a FOSS(Fully Open Source Software) app that creates a virtual physical Keyboard via the linux UHID API to be able to convert MIDI signals to keyboard key strokes.
+        \nRoblox DOES NOT accept virtual keystrokes sent to it via programs without registering a corresponding keyboard and therefore, a computer keyboard must be emulated.
+
+        \n\nThe source of the MIDI signals could either be a real electric piano you have plugged in via a MIDI cable(aka printer cable) or a MIDI file(for autoplaying).
+        \nIn simpler terms, you can use your piano or a music file to play music in Roblox Games that offer a piano.
+        \nEg: Piano Rooms, Piano Keyboard v1.1, Digital Piano, Piano Visualizations 2, etc.
+
+        \n\n
+        There are three ways for you to open this app for convenience\'s sake.
+
+        \nYou have the normal app button that shows up in your launcher like any other app.
+        In your notification bar, there is a tile which you could add
+        Finally, a floating icon on your screen
+
+        \n\nYou have two primary modes, Qwerty mode and RobloxMidiConnect.
+
+        \n\nQwerty Mode is how the majority of piano games on Roblox function via keyboard. Qwerty mode is limited as it doesn\'t carry over information like note velocity(softness/loudness), currently held notes information(can\'t hold notes, which is a keyboard limitation[workaround available but then most roblox piano games don\'t even support it and it\'s too much work(feel free to send a PR)], sustain pedal, limited octave ranges(how high and low you can go), etc.
+
+        \n\nRobloxMidiConnect mode, named after the python program RobloxMidiConnect(https://github.com/LordHenryVonHenry/RobloxMidiConnect), on the other hand was made to specifically work with Piano Room\'s(https://www.roblox.com/games/10888259502/Piano-Rooms) Midi Connect functionality.
+        \nUnlike Qwerty mode, RobloxMidiConnect mode DOES support note velocity(softness/loudness), sustain information(CAN hold multiple notes properly), sustain pedal, bigger octave ranges(how high and low you can go), etc.
+        \nThe only caveat with it is the fact that Piano Rooms is the only game on Roblox that supports RobloxMidiConnect.
+
+        \n\nThis android app was made by EDllT after many headaches over the span of several inferior versions.
+        \nHuge thanks to WuDi-ZhanShen, yume-chan and the scrcpy project as this wouldn\'t have been possible without them.
+
+        \n\nOh yeah back to what you were trying to actually do, to deactivate the virtual keyboard, you must hold down the "Deactivate Virtual Keyboard" button.</string>
     <string name="connect_success">Starting accessibility service</string>
     <string name="connect_failed">Connection failed</string>
     <string name="pause">Pause</string>

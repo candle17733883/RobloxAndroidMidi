@@ -98,8 +98,7 @@ class tuoluoyiService : AccessibilityService() {
                 "android.intent.action.CONFIGURATION_CHANGED" -> if (isFloatWindowExist) {
                     GetWidthHeight()
                     val rotation = windowManager!!.defaultDisplay.rotation
-                    view!!.visibility =
-                        if (rotation == 0 || rotation == 2) View.GONE else View.VISIBLE
+                    view!!.visibility = View.VISIBLE
                     view!!.setImageResource(R.drawable.icon)
                     windowManager!!.updateViewLayout(view, params)
                 }
@@ -383,11 +382,15 @@ class tuoluoyiService : AccessibilityService() {
                         //如果是单击，则暂停/恢复陀螺仪服务
                         if (!moved) {
                             if (System.currentTimeMillis() - downTime < 200) {
-                                if (isGyroEnabled) { // Make sure to change isGyroEnabled
-                                    // DISABLE HERE!
-                                } else {
-                                    // ENABLE HERE!
-                                }
+//                                if (isGyroEnabled) { // Make sure to change isGyroEnabled
+//                                    // DISABLE HERE!
+//                                } else {
+//                                    // ENABLE HERE!
+//                                }
+                                Log.d("MyTag", "Starting app via float window click")
+                                val launchIntent = Intent(this@tuoluoyiService, MainActivity::class.java)
+                                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                this@tuoluoyiService.startActivity(launchIntent)
                             } else {
                                 isThumbLPressed = !isThumbLPressed
                                 // Implement logic here for when the floating window is held and then released

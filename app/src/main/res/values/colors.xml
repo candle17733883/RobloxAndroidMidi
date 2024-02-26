@@ -5,4 +5,5 @@
     <color name="bg">#306FF0</color>
     <color name="wrong">#FF3D00</color>
     <color name="right">#ffffffff</color>
+    <color name="green">#3DFF00</color>
 </resources>

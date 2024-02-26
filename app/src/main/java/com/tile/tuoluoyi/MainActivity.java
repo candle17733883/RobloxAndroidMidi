@@ -63,11 +63,11 @@ public class MainActivity extends Activity {
                     IBinder binder = binderContainer.getBinder();
                     //如果binder已经失去活性了，则不再继续解析
                     if (!binder.pingBinder()) return;
-                    B.setText(R.string.service_actived);
-                    B.setTextColor(getColor(R.color.right));
+                    B.setText(R.string.deactive);
+                    B.setTextColor(getColor(R.color.green));
                     B.setOnClickListener(view -> showHelp());
                     B.setOnLongClickListener(view -> {
-                        showExit(binder);
+                        deactivateService(binder);
                         return true;
                     });
                     findViewById(R.id.s1).setEnabled(true);
@@ -80,31 +80,12 @@ public class MainActivity extends Activity {
         }
     };
 
-    private void showExit(IBinder binder) {
+    private void deactivateService(IBinder binder) {
         IGamePad gamePad = IGamePad.Stub.asInterface(binder);
-        SharedPreferences sp = getSharedPreferences("data", 0);
-        int currentMode = 0;
-        try {
-            gamePad.changeMode(sp.getInt("currentMode", 0));
-            currentMode = gamePad.getCurrentMode();
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
 
         new AlertDialog.Builder(this)
                 .setTitle(R.string.deactive_service)
                 .setMessage(R.string.deactive_service_text)
-                .setPositiveButton(getString(R.string.change_mode) + (currentMode == 2 ? 1 : currentMode + 2), (dialogInterface, i) -> {
-                    try {
-                        int mode = gamePad.getCurrentMode();
-                        mode = (mode == 2 ? 0 : mode + 1);
-                        gamePad.changeMode(mode);
-                        sp.edit().putInt("currentMode", mode).apply();
-                        Toast.makeText(this, getString(R.string.change_mode) + (mode+1), Toast.LENGTH_SHORT).show();
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                })
                 .setNeutralButton(R.string.deactive, (dialogInterface, i) -> {
                     try {
                         gamePad.closeAndExit();
@@ -117,9 +98,9 @@ public class MainActivity extends Activity {
                     s1.setEnabled(false);
                     s1.setChecked(false);
                     Toast.makeText(this, R.string.deactive_success, Toast.LENGTH_SHORT).show();
-                    sendBroadcast(new Intent("intent.tuoluoyi.exit"));
-                    new Handler().postDelayed(this::finish, 1000);
-
+                    sendBroadcast(new Intent("intent.tuoluoyi.exit")); // Communicates with the Accessibility Script
+                    setViewsOnClick();
+//                    new Handler().postDelayed(this::finish, 1000);
                 })
                 .show();
     }
@@ -231,14 +212,6 @@ public class MainActivity extends Activity {
             }
             Toast.makeText(MainActivity.this, R.string.need_restart, Toast.LENGTH_SHORT).show();
         });
-
-        Switch s3 = findViewById(R.id.s3);
-        s3.setChecked(sp.getBoolean("invertX", false));
-        s3.setOnCheckedChangeListener((compoundButton, isChecked) -> sp.edit().putBoolean("invertX", isChecked).apply());
-
-        Switch s4 = findViewById(R.id.s4);
-        s4.setChecked(sp.getBoolean("invertY", false));
-        s4.setOnCheckedChangeListener((compoundButton, isChecked) -> sp.edit().putBoolean("invertY", isChecked).apply());
         final LinearLayout linearLayout1 = findViewById(R.id.l);
         LayoutTransition transition = new LayoutTransition();
         transition.setDuration(200L);
@@ -259,9 +232,6 @@ public class MainActivity extends Activity {
             } catch (Exception ignored) {
             }
         });
-        Switch s6 = findViewById(R.id.s6);
-        s6.setChecked(!sp.getBoolean("canmove", true));
-        s6.setOnCheckedChangeListener((compoundButton, isChecked) -> sp.edit().putBoolean("canmove", !isChecked).apply());
         EditText e = findViewById(R.id.e);
         SeekBar sb = findViewById(R.id.sb);
         e.setText(String.format(Locale.getDefault(), "%d", sp.getInt("tran", 90)));
@@ -307,53 +277,6 @@ public class MainActivity extends Activity {
                 }
             }
         });
-        EditText e3 = findViewById(R.id.e3);
-        SeekBar sb3 = findViewById(R.id.sb3);
-        e3.setText(String.format(Locale.getDefault(), "%d", sp.getInt("size", 50)));
-        sb3.setProgress(sp.getInt("size", 50));
-        sb3.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                e3.setText(String.format(Locale.getDefault(), "%d", progress));
-                sp.edit().putInt("size", progress).apply();
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
-        e3.setOnKeyListener((view, i, keyEvent) -> {
-            if (keyEvent.getKeyCode() == KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN && e3.getText().length() > 0) {
-                int value = Integer.parseInt(e3.getText().toString());
-                if (value >= 0 && value <= 100) {
-                    sp.edit().putInt("size", value).apply();
-                    sb3.setProgress(value);
-                } else {
-                    Toast.makeText(MainActivity.this, R.string.input_100, Toast.LENGTH_SHORT).show();
-                    e3.setText(String.format(Locale.getDefault(), "%d", sp.getInt("size", 50)));
-                }
-            }
-            return false;
-        });
-        e3.setOnFocusChangeListener((view, b) -> {
-            if (!b) {
-                int value = Integer.parseInt(e3.getText().toString());
-                if (value >= 0 && value <= 100) {
-                    sp.edit().putInt("size", value).apply();
-                    sb3.setProgress(value);
-                } else {
-                    Toast.makeText(MainActivity.this, R.string.input_100, Toast.LENGTH_SHORT).show();
-                    e3.setText(String.format(Locale.getDefault(), "%d", sp.getInt("size", 50)));
-                }
-            }
-        });
-
         EditText e1 = findViewById(R.id.e1);
         SeekBar sb1 = findViewById(R.id.sb1);
         e1.setText(String.format(Locale.getDefault(), "%d", sp.getInt("sensityX", 100)));
@@ -400,51 +323,6 @@ public class MainActivity extends Activity {
             }
         });
 
-        EditText e2 = findViewById(R.id.e2);
-        SeekBar sb2 = findViewById(R.id.sb2);
-        e2.setText(String.format(Locale.getDefault(), "%d", sp.getInt("sensityY", 100)));
-        sb2.setProgress(sp.getInt("sensityY", 100));
-        sb2.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                e2.setText(String.format(Locale.getDefault(), "%d", i));
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                sp.edit().putInt("sensityY", seekBar.getProgress()).apply();
-            }
-        });
-        e2.setOnKeyListener((view, i, keyEvent) -> {
-            if (keyEvent.getKeyCode() == KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN && e2.getText().length() > 0) {
-                int value = Integer.parseInt(e2.getText().toString());
-                if (value >= 0 && value <= 400) {
-                    sp.edit().putInt("sensityY", value).apply();
-                    sb2.setProgress(value);
-                } else {
-                    Toast.makeText(MainActivity.this, R.string.input_400, Toast.LENGTH_SHORT).show();
-                    e2.setText(String.format(Locale.getDefault(), "%d", sp.getInt("sensityY", 100)));
-                }
-            }
-            return false;
-        });
-        e2.setOnFocusChangeListener((view, b) -> {
-            if (!b) {
-                int value = Integer.parseInt(e2.getText().toString());
-                if (value >= 0 && value <= 400) {
-                    sp.edit().putInt("sensityY", value).apply();
-                    sb2.setProgress(value);
-                } else {
-                    Toast.makeText(MainActivity.this, R.string.input_400, Toast.LENGTH_SHORT).show();
-                    e2.setText(String.format(Locale.getDefault(), "%d", sp.getInt("sensityY", 100)));
-                }
-            }
-        });
         if (!sp.getBoolean("floatWindow", true)) {
             linearLayout1.removeView(linearLayout);
         }
