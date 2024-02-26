@@ -144,6 +144,9 @@ public class MainActivity extends Activity {
         SharedPreferences sp = getSharedPreferences("data", 0);
         B = findViewById(R.id.b);
         String cmd = "sh " + getExternalFilesDir(null).getPath() + "/starter.sh";
+        B.setOnLongClickListener(view -> {
+            return false;
+        });
         B.setOnClickListener(view -> new AlertDialog.Builder(MainActivity.this)
                 .setTitle(R.string.active_title)
                 .setMessage(R.string.active_text)
@@ -231,6 +234,7 @@ public class MainActivity extends Activity {
                 }
             } catch (Exception ignored) {
             }
+            Toast.makeText(MainActivity.this, R.string.need_restart, Toast.LENGTH_SHORT).show();
         });
         EditText e = findViewById(R.id.e);
         SeekBar sb = findViewById(R.id.sb);
