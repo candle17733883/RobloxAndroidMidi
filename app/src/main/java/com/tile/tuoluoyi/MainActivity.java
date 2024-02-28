@@ -15,6 +15,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RoundRectShape;
@@ -35,6 +36,8 @@ import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.Toast;
+
+import androidx.core.content.ContextCompat;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -64,7 +67,7 @@ public class MainActivity extends Activity {
                     //如果binder已经失去活性了，则不再继续解析
                     if (!binder.pingBinder()) return;
                     B.setText(R.string.deactive);
-                    B.setTextColor(getColor(R.color.green));
+                    B.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(MainActivity.this, R.color.green)));
                     B.setOnClickListener(view -> showHelp());
                     B.setOnLongClickListener(view -> {
                         deactivateService(binder);
@@ -93,7 +96,8 @@ public class MainActivity extends Activity {
                         e.printStackTrace();
                     }
                     B.setText(R.string.click_to_active);
-                    B.setTextColor(getColor(R.color.wrong));
+//                    B.setTextColor(getColor(R.color.red));
+                    B.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(MainActivity.this, R.color.red)));
                     Switch s1 = findViewById(R.id.s1);
                     s1.setEnabled(false);
                     s1.setChecked(false);
@@ -167,10 +171,7 @@ public class MainActivity extends Activity {
                 })
                 .setNegativeButton("shizuku", (dialogInterface, i) -> check())
                 .show());
-        float density = getResources().getDisplayMetrics().density;
-        ShapeDrawable oval = new ShapeDrawable(new RoundRectShape(new float[]{40 * density, 40 * density, 40 * density, 40 * density, 40 * density, 40 * density, 40 * density, 40 * density}, null, null));
-        oval.getPaint().setColor(getColor(R.color.a));
-        B.setBackground(oval);
+        B.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(MainActivity.this, R.color.red)));
 
         Switch s1 = findViewById(R.id.s1);
         String set = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
