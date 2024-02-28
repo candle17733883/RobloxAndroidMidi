@@ -196,6 +196,8 @@ public class GamePadNative {
                 }
 
                 @Override
+                // The following function creates an HID device only if it hasn't been created before
+                // In case it has been created before, it just returns the boolean indicating it has already
                 public boolean create() throws RemoteException {
                     Log.d("MyTag", "HELLO WORLD THIS IS FROM GAMEPADNATIVE");
                     if (!isUHidCreated)
@@ -211,6 +213,10 @@ public class GamePadNative {
                     System.exit(0);
                 }
             };
+
+            // Create an HID as soon as we start GamePadNative
+            isUHidCreated = nativeCreateUHid();
+
             //把binder填到一个可以用Intent来传递的容器中
             BinderContainer binderContainer = new BinderContainer(binder);
             // 创建 Intent 对象，并将binder作为附加参数

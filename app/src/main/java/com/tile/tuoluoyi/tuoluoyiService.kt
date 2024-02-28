@@ -475,7 +475,9 @@ class tuoluoyiService : AccessibilityService() {
         super.onDestroy()
 
         MIDIOutputPort?.close()
-        iGamePad?.close()
+        // We shouldn't close the HID whenever we stop the Accessibility Service which reads MIDI input
+        // Instead, we let Main Activity's Deactivate button handle it
+//        iGamePad?.close()
         if (isFloatWindowExist) windowManager?.removeView(view)
         if (isBroadcastRegistered) unregisterReceiver(mBroadcastReceiver)
         if (isSharedPreferenceRegistered) sp?.unregisterOnSharedPreferenceChangeListener(myListener)
