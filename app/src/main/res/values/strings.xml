@@ -36,8 +36,8 @@
     <string name="shizuku_notready">Shizuku not running</string>
     <string name="help_title">Help</string>
     <string name="ok">OK!</string>
-    <string name="help_text">https://github.com/EDLLT/RobloxAndroidMidi\n\nThis is a FOSS(Fully Open Source Software) app that creates a virtual physical Keyboard via the linux UHID API to be able to convert MIDI signals to keyboard key strokes.
-        \nRoblox DOES NOT accept virtual keystrokes sent to it via programs without registering a corresponding keyboard and therefore, a computer keyboard must be emulated.
+    <string name="help_text">https://github.com/EDLLT/RobloxAndroidMidi\n\nThis is a FOSS(Fully Open Source Software) copylefted(GPLv3) app. It creates a virtual physical Keyboard via the linux UHID API to be able to convert MIDI signals to keyboard key strokes.
+        \nRoblox DOES NOT accept virtual keystrokes sent to it via any means without registering a corresponding physical keyboard and therefore, a computer keyboard must be emulated.
 
         \n\nThe source of the MIDI signals could either be a real electric piano you have plugged in via a MIDI cable(aka printer cable) or a MIDI file(for autoplaying).
         \nIn simpler terms, you can use your piano or a music file to play music in Roblox Games that offer a piano.
