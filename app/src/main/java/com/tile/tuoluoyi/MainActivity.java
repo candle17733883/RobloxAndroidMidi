@@ -74,6 +74,7 @@ public class MainActivity extends Activity {
                 case "intent.tuoluoyi.exit":
                     Switch s1 = findViewById(R.id.s1);
                     s1.setChecked(false);
+                    stopService(new Intent(MainActivity.this, tuoluoyiService.class));
                     break;
             }
         }
