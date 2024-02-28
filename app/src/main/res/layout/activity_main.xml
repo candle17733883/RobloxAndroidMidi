@@ -26,6 +26,18 @@
             android:layout_marginBottom="20dp"
             android:textAllCaps="false" />
 
+        <Button
+            android:id="@+id/midi_input_mode"
+            android:textSize="17sp"
+            android:text="@string/qwerty_mode"
+            android:textColor="@color/white"
+            android:background="@drawable/button_bg"
+            android:backgroundTint="@color/yellow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:textAllCaps="false" />
+
         <Switch
             android:id="@+id/s1"
             android:enabled="false"
@@ -50,13 +62,13 @@
                 android:id="@+id/load_midi"
                 android:textSize="17sp"
                 android:text="@string/play_midi"
-                android:textColor="@color/fg"
+                android:textColor="@color/white"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
                 android:textAllCaps="false"
                 android:background="@drawable/button_bg"
-                android:backgroundTint="@color/yellow"/>
+                android:backgroundTint="@color/gray"/>
             <TableRow>
 
                 <TextView

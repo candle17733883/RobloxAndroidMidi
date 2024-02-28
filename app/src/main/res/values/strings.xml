@@ -20,12 +20,17 @@
     <string name="back">back</string>
     <string name="deactive">Deactivate Virtual Keyboard</string>
     <string name="deactive_success">Service deactivated.</string>
-    <string name="privacy_title">Privacy</string>
-    <string name="agree">agree</string>
-    <string name="privacy_text">This APP will not collect any data.\n</string>
+    <string name="privacy_title">Note</string>
+    <string name="agree">Ok</string>
+    <string name="privacy_text">This app was made by EDllT.\nTo display Help, Activate then Deactivate Virtual keyboard.\n</string>
     <string name="exit">exit</string>
     <string name="active_title">Service Activation</string>
     <string name="active_text">You can choose one of these three activation methods:\n\n\t1.adb\n\t2.Shizuku\n\t3.root\n</string>
+    <string name="midi_mode_title">Input Mode</string>
+    <string name="midi_mode_text">Qwerty Mode: Works with most if not all Roblox Piano Games(inherently lacks softness/loudness, sustainability, octave ranges)
+
+        \n\nPiano Rooms mode: Only works with Piano Rooms\' Midi Connect(most realistic experience)\nhttps://www.roblox.com/games/10888259502/Piano-Rooms</string>
+
     <string name="copy_cmd">copy adb command</string>
     <string name="cmd_copied">adb command copied: \nadb shell </string>
     <string name="service_not_active">Service not activated</string>
@@ -34,6 +39,8 @@
     <string name="input_400">Please input numbers from 0 to 200</string>
     <string name="gyro_notfound">Your Device Has No Gyroscope Sensor!</string>
     <string name="shizuku_notready">Shizuku not running</string>
+    <string name="qwerty_mode">Mode: Qwerty</string>
+    <string name="pianorooms_mode">Mode: Piano Rooms</string>
     <string name="help_title">Help</string>
     <string name="ok">OK!</string>
     <string name="help_text">https://github.com/EDLLT/RobloxAndroidMidi\n\nThis is a FOSS(Fully Open Source Software) copylefted(GPLv3) app. It creates a virtual physical Keyboard via the linux UHID API to be able to convert MIDI signals to keyboard key strokes.

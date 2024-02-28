@@ -90,6 +90,7 @@ class tuoluoyiService : AccessibilityService() {
     var MIDIOutputPort: MidiOutputPort? = null
 //    var binding: ActivityMainBinding? = null
     val consoleList = ConsoleList(this@tuoluoyiService)
+    var current_midi_mode: Int = 1
 
     val mBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -103,6 +104,10 @@ class tuoluoyiService : AccessibilityService() {
                     windowManager!!.updateViewLayout(view, params)
                 }
 
+                "intent.tuoluoyi.current_midi_mode" -> {
+                    current_midi_mode = sp!!.getInt("midi_input_mode", 1)
+                }
+
                 "intent.tuoluoyi.sendBinder" -> {
                     val binderContainer = intent.getParcelableExtra<BinderContainer>("binder")
                     val binder = binderContainer!!.binder
@@ -113,10 +118,11 @@ class tuoluoyiService : AccessibilityService() {
                     //将binder转换为接口
                     iGamePad = IGamePad.Stub.asInterface(binder)
 
+                    current_midi_mode = sp!!.getInt("midi_input_mode", 1)
 
                     try {
                         iGamePad?.changeMode(sp!!.getInt("currentMode", 0))
-                        Log.d("MyTag", "ATTEMPTING TO CREATE GAMEPAD IN HERE! TUOSERVICE")
+                        Log.d("MyTag", "Attempting to create Virtual HID device")
                         isGamePadCreated = iGamePad?.create() == true // Checks whether if the gamepad was created or not
                     } catch (e: RemoteException) {
                         e.printStackTrace()
@@ -214,25 +220,37 @@ class tuoluoyiService : AccessibilityService() {
                                                 val byte = data[i].toInt() and 0xFF
                                                 if (byte >= 0x80) { // Status byte
                                                     val messageType = byte and 0xF0
-//                                                    val channel = byte and 0x0F + 1
+
+                                                    if (messageType != NOTE_ON && messageType != NOTE_OFF) {
+                                                        continue
+                                                    }
+//                                                  val channel = byte and 0x0F + 1
                                                     val noteNumber = data[i + 1].toInt()
                                                     val velocity = data[i + 2].toInt()
 
-                                                    var isDown: Boolean = false
-                                                    if (messageType == NOTE_ON) {
-                                                        isDown = true
-                                                    } else if (messageType == NOTE_OFF) {
-                                                        isDown = false
-                                                    } else {
-                                                        continue
-                                                    }
+
+
+                                                    var isDown: Boolean = messageType == NOTE_ON
+
+//                                                    if (messageType == NOTE_ON) {
+//                                                        isDown = true
+//                                                    } else if (messageType == NOTE_OFF) {
+//                                                        isDown = false
+//                                                    } else {
+//                                                        continue
+//                                                    }
 
                                                     try {
-                                                        if (noteNumber >= 0 && noteNumber <= 108) {
-                                                            iGamePad?.qwertyKey(noteNumber, isDown)
+                                                        // Case 1, qwerty mode. Case 2, Piano Rooms mode
+                                                        if (current_midi_mode == 1) {
+                                                            if (noteNumber >= 0 && noteNumber <= 108) {
+                                                                iGamePad?.qwertyKey(noteNumber, isDown)
 
-//                                                                ?.let { consoleList.add(it) }
-//                                                          consoleList.add("Key pressed: IsDown $isDown, Note $noteNumber")
+    //                                                                ?.let { consoleList.add(it) }
+    //                                                          consoleList.add("Key pressed: IsDown $isDown, Note $noteNumber")
+                                                            }
+                                                        } else { // current_midi_mode == 2
+                                                            iGamePad?.pianoRoomsKey(isDown, noteNumber, velocity)
                                                         }
                                                     } catch (exception: Exception) {
                                                         val errMsg = "ERROR ISDOWN $isDown: $exception"
@@ -306,6 +324,7 @@ class tuoluoyiService : AccessibilityService() {
         //注册广播接收器，用来接收陀螺仪进程发来的广播
         registerReceiver(mBroadcastReceiver, IntentFilter("intent.tuoluoyi.exit"))
         registerReceiver(mBroadcastReceiver, IntentFilter("intent.tuoluoyi.sendBinder"))
+        registerReceiver(mBroadcastReceiver, IntentFilter("intent.tuoluoyi.current_midi_mode"))
         registerReceiver(
             mBroadcastReceiver,
             IntentFilter("android.intent.action.CONFIGURATION_CHANGED")
@@ -346,7 +365,8 @@ class tuoluoyiService : AccessibilityService() {
         canFloatWindowMove = sp!!.getBoolean("canmove", true)
         view = ImageView(this)
         val rotation = windowManager!!.defaultDisplay.rotation
-        view!!.visibility = if (rotation == 0 || rotation == 2) View.GONE else View.VISIBLE
+//        view!!.visibility = if (rotation == 0 || rotation == 2) View.GONE else View.VISIBLE
+        view!!.visibility = View.VISIBLE
         view!!.setImageResource(R.drawable.cropped_circular_dragon) //设置悬浮球的View
         //设置悬浮球的触摸响应
 

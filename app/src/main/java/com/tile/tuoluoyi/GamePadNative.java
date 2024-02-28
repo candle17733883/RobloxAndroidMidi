@@ -150,6 +150,8 @@ public class GamePadNative {
 
     static native void nativeQwertyKey(int noteNumber, boolean isDown);
 
+    static native void nativePianoRoomsKey(boolean isDown, int noteNumber, int velocity);
+
     private static void sendBinderToAppByStickyBroadcast() {
 
         try {
@@ -181,6 +183,11 @@ public class GamePadNative {
 //                    } else {
 //                        return "Failure";
 //                    }
+                }
+
+                @Override
+                public void pianoRoomsKey(boolean isDown, int noteNumber, int velocity) throws RemoteException {
+                    nativePianoRoomsKey(isDown, noteNumber, velocity);
                 }
 
                 @Override

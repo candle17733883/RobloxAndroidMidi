@@ -8,4 +8,6 @@
     <color name="red">#950000</color>
     <color name="white">#ffffffff</color>
     <color name="yellow">#958E00</color>
+    <color name="gray">#959595</color>
+    <color name="blue">#000095</color>
 </resources>

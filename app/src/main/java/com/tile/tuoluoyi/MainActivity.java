@@ -17,14 +17,9 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
-import android.graphics.drawable.ShapeDrawable;
-import android.graphics.drawable.shapes.RoundRectShape;
-import android.hardware.Sensor;
-import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.RemoteException;
@@ -45,7 +40,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -56,6 +50,8 @@ public class MainActivity extends Activity {
 
     boolean isListenerAdded = false, isBroadcastRegistered = false;
     Button B;
+    Button midi_input_mode;
+    int current_midi_mode;
     private final Shizuku.OnRequestPermissionResultListener REQUEST_PERMISSION_RESULT_LISTENER = (requestCode, grantResult) -> check();
     private final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
@@ -144,6 +140,19 @@ public class MainActivity extends Activity {
         setViewsOnClick(); //设定主界面的按钮们和进度条们的点击事件
     }
 
+    private void updateMidiMode() {
+        SharedPreferences sp = getSharedPreferences("data", 0);
+        current_midi_mode = sp.getInt("midi_input_mode", 1);
+
+        if (current_midi_mode == 1) {
+            midi_input_mode.setText(R.string.qwerty_mode);
+            sendBroadcast(new Intent("intent.tuoluoyi.current_midi_mode")); // Communicates with the Accessibility Script
+        } else if (current_midi_mode == 2) {
+            midi_input_mode.setText(R.string.pianorooms_mode);
+            sendBroadcast(new Intent("intent.tuoluoyi.current_midi_mode")); // Communicates with the Accessibility Script
+        }
+    }
+
     private void setViewsOnClick() {
         SharedPreferences sp = getSharedPreferences("data", 0);
         B = findViewById(R.id.b);
@@ -172,6 +181,22 @@ public class MainActivity extends Activity {
                 .setNegativeButton("shizuku", (dialogInterface, i) -> check())
                 .show());
         B.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(MainActivity.this, R.color.red)));
+
+        midi_input_mode = findViewById(R.id.midi_input_mode);
+        midi_input_mode.setOnClickListener(view -> new AlertDialog.Builder(MainActivity.this)
+                .setTitle(R.string.active_title)
+                .setMessage(R.string.midi_mode_text)
+                .setNegativeButton("Qwerty", (dialogInterface, i) -> {
+                    sp.edit().putInt("midi_input_mode", 1).apply();
+                    updateMidiMode();
+                })
+                .setPositiveButton("Piano Rooms", (dialogInterface, i) -> {
+                    sp.edit().putInt("midi_input_mode", 2).apply();
+                    updateMidiMode();
+                })
+                .show());
+
+        updateMidiMode();
 
         Switch s1 = findViewById(R.id.s1);
         String set = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);

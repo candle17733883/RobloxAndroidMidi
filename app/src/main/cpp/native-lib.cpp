@@ -145,7 +145,7 @@ std::unordered_map<std::string, int> qwerty_to_hex_map = {
         {"^", 0x23},
         {"&", 0x24},
         {"*", 0x25},
-        {"(", 0x26}
+        {"(", 0x26},
 };
 
 std::unordered_map<std::string, int> meta_key_map = {
@@ -225,9 +225,26 @@ std::unordered_map<std::string, int> meta_key_map = {
         {"(", 0x02}
 };
 
+std::unordered_map<std::string, int> numpad_to_hex_map = {
+        {"*", 0x55},
+        {"-", 0x56},
+        {"+", 0x57},
+
+
+        {"1", 0x59},
+        {"2", 0x5A},
+        {"3", 0x5B},
+        {"4", 0x5C},
+        {"5", 0x5D},
+        {"6", 0x5E},
+        {"7", 0x5F},
+        {"8", 0x60},
+        {"9", 0x61},
+        {"0", 0x62},
+};
+
 // Function to write 8 integers to the file descriptor
-int writeKeyboard(int metakey0, int reserved1, int data2, int data3, int data4, int data5,
-                  int data6, int data7) {
+void writeKeyboard(int metakey0, int reserved1, int data2) {
 
     // https://d1.amobbs.com/bbs_upload782111/files_47/ourdev_692986N5FAHU.pdf
     // https://www.usbzh.com/article/detail-326.html
@@ -237,14 +254,47 @@ int writeKeyboard(int metakey0, int reserved1, int data2, int data3, int data4, 
 
     // Keyboard keys in HEX
     uhidEvent.u.input.data[2] = data2;
-    uhidEvent.u.input.data[3] = data3;
-    uhidEvent.u.input.data[4] = data4;
-    uhidEvent.u.input.data[5] = data5;
-    uhidEvent.u.input.data[6] = data6;
-    uhidEvent.u.input.data[7] = data7;
     write(uhid_fd, &uhidEvent, sizeof(uhidEvent));
 
-    return 0;
+//    return 0;
+}
+void tapKeyboard(int metakey0, int reserved1, int data2) {
+    writeKeyboard(metakey0, reserved1, data2);
+    writeKeyboard(0x00, 0x00, 0x00);
+}
+//void writeKeyboard(int metakey0, int reserved1, int data2, int data3, int data4, int data5,
+//                  int data6, int data7) {
+//
+//    // https://d1.amobbs.com/bbs_upload782111/files_47/ourdev_692986N5FAHU.pdf
+//    // https://www.usbzh.com/article/detail-326.html
+//
+//    uhidEvent.u.input.data[0] = metakey0;
+//    uhidEvent.u.input.data[1] = reserved1; // Reserved
+//
+//    // Keyboard keys in HEX
+//    uhidEvent.u.input.data[2] = data2;
+//    uhidEvent.u.input.data[3] = data3;
+//    uhidEvent.u.input.data[4] = data4;
+//    uhidEvent.u.input.data[5] = data5;
+//    uhidEvent.u.input.data[6] = data6;
+//    uhidEvent.u.input.data[7] = data7;
+//    write(uhid_fd, &uhidEvent, sizeof(uhidEvent));
+//
+////    return 0;
+//}
+
+// Function to write 8 integers to the file descriptor
+void SendEncodedKey(int a, int b, int c, int d) {
+    tapKeyboard(0x00, 0x00, numpad_to_hex_map["*"]);
+
+
+    tapKeyboard(0x00, 0x00, numpad_to_hex_map[std::to_string(a)]);
+
+    tapKeyboard(0x00, 0x00, numpad_to_hex_map[std::to_string(b)]);
+
+    tapKeyboard(0x00, 0x00, numpad_to_hex_map[std::to_string(c)]);
+
+    tapKeyboard(0x00, 0x00, numpad_to_hex_map[std::to_string(d)]);
 }
 
 extern "C"
@@ -287,21 +337,16 @@ Java_com_tile_tuoluoyi_GamePadNative_nativeCloseUHid(JNIEnv *env, jclass clazz) 
     return write(uhid_fd, &ev, sizeof(uhid_event)) > 0;
 }
 
+
+// qwerty mode function [works on most roblox piano games]
+// RobloxMidiConnect(Piano Rooms) mode function [made specifically for Piano Rooms' MidiConnect functionality]
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_tile_tuoluoyi_GamePadNative_nativeQwertyKey(JNIEnv *env,
                                                     jclass thiz,
                                                     jint noteNumber,
                                                     jboolean isDown) {
-
-
-        // TODO
-        // Split this function into two functions
-        // the one to use will be determined by an extra argument given to us
-        // that mode setting will be stored in sharedpreferences which the user can change
-
-        // qwerty mode function [works on most roblox piano games]
-        // RobloxMidiConnect(Piano Rooms) mode function [made specifically for Piano Rooms' MidiConnect functionality]
         if (!isDown) {
 //            return 0; // We won't bother with keys being held down(in qwerty mode) as most roblox piano games don't support it anyway
             return;
@@ -327,26 +372,58 @@ Java_com_tile_tuoluoyi_GamePadNative_nativeQwertyKey(JNIEnv *env,
         // Checks whether if the associated qwerty key has to be held with a meta key(in our case left shift to indicate it's capital)
         int meta_key_value = meta_key_map[qwerty_key];
 
-        writeKeyboard(meta_key_value,
-                      0x00,
-                      key_hex_value,
-                      0x00,
-                      0x00,
-                      0x00,
-                      0x00,
-                      0x00);
-
-        writeKeyboard(0x00,
-                  0x00,
-                  0x00,
-                  0x00,
-                  0x00,
-                  0x00,
-                  0x00,
-                  0x00);
+        // quick tap
+        tapKeyboard(meta_key_value,0x00,key_hex_value);
 
         // For Optimization's sake, we log directly instead of returning(which I think will improve performance)
 
         __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "%s", ("Acknowledged : " + std::to_string(noteNumber) + " " + std::string(isDown ? "true" : "false")).c_str());
+//        return 0;
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_tile_tuoluoyi_GamePadNative_nativePianoRoomsKey(JNIEnv *env,
+                                                     jclass thiz,
+                                                     jboolean isDown,
+                                                     jint noteNumber,
+                                                     jint velocity) {
+
+//    # We are dividing by 12 because we will be encoding it with 12 keys only(The keys are "0123456789-+")
+//    # Additionally, it adds up nicely because there are 12 semitones in one octave
+//
+//    # C0 aka Note C at Octave 0
+//    # Note number: 12
+//    # O = msg.note / 12 = 12 / 12 = 1
+//    # Octave = 1 - O = 1 - 1 = 0
+//
+//    # C4 aka Note C at Octave 4
+//    # Note number: 60
+//    # O = msg.note / 12 = 60 /12 = 5
+//    # Octave = 1 - O = 5 - 1 = 4
+//
+//    # To decode
+//    # (DIV_VAL * 12) + MODULOS_VAL
+
+    // NOTE: Because we explicitly declared the arguments as an int, C++ automatically discards
+    // the decimal bit for us allowing us to skip having to floor(this wouldn't be possible if the values given were negative)
+
+    int EncodedOctaveNo = noteNumber / 12;
+    int EncodedNoteNo = noteNumber % 12;
+
+    // Velocity defaults to 0 which tells the game that the notes are no longer being held
+    int EncodedVelocityA = 0;
+    int EncodedVelocityB = 0;
+
+    if (isDown == true) {
+        EncodedVelocityA = velocity / 12;
+        EncodedVelocityB = velocity % 12;
+    }
+
+    SendEncodedKey(EncodedOctaveNo, EncodedNoteNo, EncodedVelocityA, EncodedVelocityB);
+
+    // For Optimization's sake, we log directly instead of returning(which I think will improve performance)
+
+    __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "%s", ("Acknowledged PR : " + std::to_string(noteNumber) + " " + std::string(isDown ? "true" : "false")).c_str());
 //        return 0;
 }
