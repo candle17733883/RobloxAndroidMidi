@@ -288,7 +288,7 @@ Java_com_tile_tuoluoyi_GamePadNative_nativeCloseUHid(JNIEnv *env, jclass clazz) 
 }
 
 extern "C"
-JNIEXPORT jint JNICALL
+JNIEXPORT void JNICALL
 Java_com_tile_tuoluoyi_GamePadNative_nativePianoKey(JNIEnv *env,
                                                     jclass thiz,
                                                     jint noteNumber,
@@ -303,7 +303,8 @@ Java_com_tile_tuoluoyi_GamePadNative_nativePianoKey(JNIEnv *env,
         // qwerty mode function [works on most roblox piano games]
         // RobloxMidiConnect(Piano Rooms) mode function [made specifically for Piano Rooms' MidiConnect functionality]
         if (!isDown) {
-            return 0; // We won't bother with keys being held down(in qwerty mode) as most roblox piano games don't support it anyway
+//            return 0; // We won't bother with keys being held down(in qwerty mode) as most roblox piano games don't support it anyway
+            return;
 
             // If you however wanted to support it(feel free to send a pr), we'd need to essentially do
             // what gaming keyboards do and that is create multiple instances of a virtual keyboard
@@ -313,7 +314,7 @@ Java_com_tile_tuoluoyi_GamePadNative_nativePianoKey(JNIEnv *env,
         //# C7 is noteNumber: 96 is m
         if (!(noteNumber >= 36 && noteNumber <= 96)) {
             __android_log_print(ANDROID_LOG_ERROR, "MyTag", "noteNumber outside valid range!");
-            return 500;
+//            return 500;
         }
 
 
@@ -344,5 +345,8 @@ Java_com_tile_tuoluoyi_GamePadNative_nativePianoKey(JNIEnv *env,
                   0x00,
                   0x00);
 
-        return 0;
+        // For Optimization's sake, we log directly instead of returning(which I think will improve performance)
+
+        __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "%s", ("Acknowledged : " + std::to_string(noteNumber) + " " + std::string(isDown ? "true" : "false")).c_str());
+//        return 0;
 }

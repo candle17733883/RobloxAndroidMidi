@@ -230,7 +230,8 @@ class tuoluoyiService : AccessibilityService() {
                                                     try {
                                                         if (noteNumber >= 0 && noteNumber <= 108) {
                                                             iGamePad?.pianoKey(noteNumber, isDown)
-                                                                ?.let { consoleList.add(it) }
+
+//                                                                ?.let { consoleList.add(it) }
 //                                                          consoleList.add("Key pressed: IsDown $isDown, Note $noteNumber")
                                                         }
                                                     } catch (exception: Exception) {
