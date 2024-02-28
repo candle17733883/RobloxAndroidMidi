@@ -50,13 +50,13 @@
         In your notification bar, there is a tile which you could add to the notification tile tab which\'d allow you to launch the application quickly
         Finally, a floating icon on your screen
 
-        \n\nYou have two primary modes, Qwerty mode and RobloxMidiConnect.
+        \n\nYou have two primary modes, Qwerty mode and Piano Rooms.
 
         \n\nQwerty Mode is how the majority of piano games on Roblox function via keyboard. Qwerty mode is limited as it doesn\'t carry over information like note velocity(softness/loudness), currently held notes information(can\'t hold notes, which is a keyboard limitation[workaround available but then most roblox piano games don\'t even support it and it\'s too much work(feel free to send a PR)], sustain pedal, limited octave ranges(how high and low you can go), etc.
 
-        \n\nRobloxMidiConnect mode, named after the python program RobloxMidiConnect(https://github.com/LordHenryVonHenry/RobloxMidiConnect), on the other hand was made to specifically work with Piano Room\'s(https://www.roblox.com/games/10888259502/Piano-Rooms) Midi Connect functionality.
-        \nUnlike Qwerty mode, RobloxMidiConnect mode DOES support note velocity(softness/loudness), sustain information(CAN hold multiple notes properly), sustain pedal, bigger octave ranges(how high and low you can go), etc.
-        \nThe only caveat with it is the fact that Piano Rooms is the only game on Roblox that supports RobloxMidiConnect.
+        \n\Piano Rooms mode, named after the Roblox game Piano Rooms(https://www.roblox.com/games/10888259502/Piano-Rooms), on the other hand was made to specifically work with Piano Room\'s(https://www.roblox.com/games/10888259502/Piano-Rooms) Midi Connect functionality.
+        \nUnlike Qwerty mode, Piano Rooms DOES support note velocity(softness/loudness), held key information(CAN hold multiple notes properly), sustain pedal, bigger octave ranges(how high and low you can go), etc.
+        \nThe only caveat with it is the fact that Piano Rooms is the only game on Roblox that supports that mode.
 
         \n\nThis android app was made by EDllT after many headaches over the span of several inferior versions.
         \nHuge thanks to WuDi-ZhanShen, yume-chan and the scrcpy project as this wouldn\'t have been possible without them.
