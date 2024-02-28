@@ -210,13 +210,13 @@ class tuoluoyiService : AccessibilityService() {
                                             if (data[offset] == ALIVE) {
                                                 return
                                             }
-
                                             for (i in offset until offset + count) {
                                                 val byte = data[i].toInt() and 0xFF
                                                 if (byte >= 0x80) { // Status byte
                                                     val messageType = byte and 0xF0
-                                                    val channel = byte and 0x0F + 1
+//                                                    val channel = byte and 0x0F + 1
                                                     val noteNumber = data[i + 1].toInt()
+                                                    val velocity = data[i + 2].toInt()
 
                                                     var isDown: Boolean = false
                                                     if (messageType == NOTE_ON) {
@@ -229,7 +229,7 @@ class tuoluoyiService : AccessibilityService() {
 
                                                     try {
                                                         if (noteNumber >= 0 && noteNumber <= 108) {
-                                                            iGamePad?.pianoKey(noteNumber, isDown)
+                                                            iGamePad?.qwertyKey(noteNumber, isDown)
 
 //                                                                ?.let { consoleList.add(it) }
 //                                                          consoleList.add("Key pressed: IsDown $isDown, Note $noteNumber")
@@ -488,11 +488,11 @@ class tuoluoyiService : AccessibilityService() {
     override fun onInterrupt() {}
     override fun onKeyEvent(event: KeyEvent): Boolean {
         if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-            iGamePad?.pianoKey(120, event.action == KeyEvent.ACTION_DOWN)
+            iGamePad?.qwertyKey(50, event.action == KeyEvent.ACTION_DOWN)
             return true // Consumes the key event
         }
         if (event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-            iGamePad?.pianoKey(120, event.action == KeyEvent.ACTION_DOWN)
+            iGamePad?.qwertyKey(50, event.action == KeyEvent.ACTION_DOWN)
             return true // Consumes the key event
         }
         return super.onKeyEvent(event)

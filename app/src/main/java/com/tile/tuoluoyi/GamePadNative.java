@@ -148,7 +148,7 @@ public class GamePadNative {
     static native boolean nativeCloseUHid();
 
 
-    static native void nativePianoKey(int noteNumber, boolean isDown);
+    static native void nativeQwertyKey(int noteNumber, boolean isDown);
 
     private static void sendBinderToAppByStickyBroadcast() {
 
@@ -156,7 +156,7 @@ public class GamePadNative {
             //生成binder
             IBinder binder = new IGamePad.Stub() {
                 @Override
-                public void pianoKey(int noteNumber, boolean isDown) throws RemoteException {
+                public void qwertyKey(int noteNumber, boolean isDown) throws RemoteException {
 //                    int status = 500;
                     // Do something!
 
@@ -165,7 +165,7 @@ public class GamePadNative {
                     // When in MidiConnect(Piano Rooms) mode, isDown=false will be taken into consideration
 
 //                    status=nativePianoKey(noteNumber, isDown);
-                    nativePianoKey(noteNumber, isDown);
+                    nativeQwertyKey(noteNumber, isDown);
 
 //                    if (isDown) {
 //                        //Log.d(MainActivity.TAG, "Key: " + Hid.keyboardCode[2])

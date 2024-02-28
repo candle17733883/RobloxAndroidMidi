@@ -289,7 +289,7 @@ Java_com_tile_tuoluoyi_GamePadNative_nativeCloseUHid(JNIEnv *env, jclass clazz) 
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_tile_tuoluoyi_GamePadNative_nativePianoKey(JNIEnv *env,
+Java_com_tile_tuoluoyi_GamePadNative_nativeQwertyKey(JNIEnv *env,
                                                     jclass thiz,
                                                     jint noteNumber,
                                                     jboolean isDown) {
