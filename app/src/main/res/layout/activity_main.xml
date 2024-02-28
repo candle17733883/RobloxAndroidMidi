@@ -45,7 +45,15 @@
             android:stretchColumns="1">
 
 
-
+            <Button
+                android:id="@+id/load_midi"
+                android:textSize="17sp"
+                android:text="@string/play_midi"
+                android:textColor="@color/fg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:textAllCaps="false" />
             <TableRow>
 
                 <TextView
@@ -58,13 +66,14 @@
                     android:gravity="center"
                     android:hint="100"
                     android:inputType="number"
-                    android:selectAllOnFocus="true" />
+                    android:focusable="false"
+                    android:selectAllOnFocus="false" />
             </TableRow>
 
             <SeekBar
                 android:id="@+id/sb1"
                 android:layout_marginBottom="20dp"
-                android:max="400" />
+                android:max="200" />
 
             <TableRow/>
 
@@ -101,7 +110,8 @@
                         android:gravity="center"
                         android:hint="90"
                         android:inputType="number"
-                        android:selectAllOnFocus="true" />
+                        android:focusable="false"
+                        android:selectAllOnFocus="false" />
                 </TableRow>
 
                 <SeekBar

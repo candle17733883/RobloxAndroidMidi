@@ -3,11 +3,12 @@
     <string name="shortcut_off">Stop Service</string>
     <string name="shortcut_on">Start Service</string>
     <string name="click_to_active">Activate Virtual Keyboard</string>
+    <string name="play_midi">Load Midi File(soon)</string>
     <string name="service_state">MIDI Service</string>
     <string name="send_notification">Service Notification</string>
     <string name="invert_x">X-axis reverse</string>
     <string name="invert_y">Y-axis reverse</string>
-    <string name="sensity_x">X-axis sensitivity</string>
+    <string name="sensity_x">Playback speed %</string>
     <string name="sensity_y">Y-axis sensitivity</string>
     <string name="show_floatwindow">Show floating ball</string>
     <string name="lock_floatwindow">Lock floating ball position</string>
@@ -30,7 +31,7 @@
     <string name="service_not_active">Service not activated</string>
     <string name="need_restart">Restart service to apply</string>
     <string name="input_100">Please input numbers from 0 to 100</string>
-    <string name="input_400">Please input numbers from 0 to 400</string>
+    <string name="input_400">Please input numbers from 0 to 200</string>
     <string name="gyro_notfound">Your Device Has No Gyroscope Sensor!</string>
     <string name="shizuku_notready">Shizuku not running</string>
     <string name="help_title">Help</string>

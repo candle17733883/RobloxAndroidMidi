@@ -304,7 +304,7 @@ public class MainActivity extends Activity {
         e1.setOnKeyListener((view, i, keyEvent) -> {
             if (keyEvent.getKeyCode() == KeyEvent.KEYCODE_ENTER && keyEvent.getAction() == KeyEvent.ACTION_DOWN && e1.getText().length() > 0) {
                 int value = Integer.parseInt(e1.getText().toString());
-                if (value >= 0 && value <= 400) {
+                if (value >= 0 && value <= 200) {
                     sp.edit().putInt("sensityX", value).apply();
                     sb1.setProgress(value);
                 } else {
@@ -317,7 +317,7 @@ public class MainActivity extends Activity {
         e1.setOnFocusChangeListener((view, b) -> {
             if (!b) {
                 int value = Integer.parseInt(e1.getText().toString());
-                if (value >= 0 && value <= 400) {
+                if (value >= 0 && value <= 200) {
                     sp.edit().putInt("sensityX", value).apply();
                     sb1.setProgress(value);
                 } else {
