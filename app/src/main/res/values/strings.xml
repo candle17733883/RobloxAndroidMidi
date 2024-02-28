@@ -4,7 +4,7 @@
     <string name="shortcut_on">Start Service</string>
     <string name="click_to_active">Activate Virtual Keyboard</string>
     <string name="play_midi">Load Midi File(soon)</string>
-    <string name="service_state">MIDI Service</string>
+    <string name="service_state">MIDI Background Service</string>
     <string name="send_notification">Service Notification</string>
     <string name="invert_x">X-axis reverse</string>
     <string name="invert_y">Y-axis reverse</string>
@@ -47,7 +47,7 @@
         There are three ways for you to open this app for convenience\'s sake.
 
         \nYou have the normal app button that shows up in your launcher like any other app.
-        In your notification bar, there is a tile which you could add
+        In your notification bar, there is a tile which you could add to the notification tile tab which\'d allow you to launch the application quickly
         Finally, a floating icon on your screen
 
         \n\nYou have two primary modes, Qwerty mode and RobloxMidiConnect.
