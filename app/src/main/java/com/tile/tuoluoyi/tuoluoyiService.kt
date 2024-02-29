@@ -146,27 +146,16 @@ class tuoluoyiService : AccessibilityService() {
                         // MIDI HANDLING LOGIC
                         Log.d(TAG, "Attempting to initialize MIDI service")
 
-                        midiManager = getSystemService(MIDI_SERVICE) as MidiManager
-                        val devices: Array<out MidiDeviceInfo>? = midiManager?.devices
-                        var deviceInfo: MidiDeviceInfo? = null
-
-                        if (devices != null) {
-                            for (device in devices) {
-                                if (device.outputPortCount > 0) {
-                                    deviceInfo = device
-                                    break
-                                }
-                            }
-                        }
-
-                        if (deviceInfo == null) {
-                            consoleList.add("FAILED TO FIND MIDI DEVICE!")
-                            sendBroadcast(Intent("intent.tuoluoyi.exit"))
-                            return
+                        if (midiManager == null) {
+                            midiManager = getSystemService(MIDI_SERVICE) as MidiManager
                         }
 
 
-//                        refreshUI()
+//                        if (deviceInfo == null) {
+//                            consoleList.add("FAILED TO FIND MIDI DEVICE!")
+//                            sendBroadcast(Intent("intent.tuoluoyi.exit"))
+//                            return
+//                        }
 
                         val TouchIDPool = object  {
                             private val unusedPool = ArrayList<Int>()
@@ -196,69 +185,68 @@ class tuoluoyiService : AccessibilityService() {
                         val robloxKeys = arrayOf<String>("1", "!", "2", "@", "3", "4", "$", "5", "%", "6", "^", "7", "8", "*", "9", "(", "0", "q", "Q", "w", "W", "e", "E", "r", "t", "T", "y", "Y", "u", "i", "I", "o", "O", "p", "P", "a", "s", "S", "d", "D", "f", "g", "G", "h", "H", "j", "J", "k", "l", "L", "z", "Z", "x", "c", "C", "v", "V", "b", "B", "n", "m")
 
 
-                        // Listen for when a midi device gets connected/disconnected
-                        deviceCallback = object : MidiManager.DeviceCallback() {
-                            override fun onDeviceAdded(device: MidiDeviceInfo) {
-                                consoleList.add("Midi Device added: $device")
-                                // Handle device addition
-                            }
+                        fun handleMidiDeviceInfo(deviceInfo: MidiDeviceInfo) {
+                            // First check whether if the device has output ports and therefore send us stuff
+                            if (deviceInfo.outputPortCount > 0) {
+                                midiManager?.openDevice(
+                                    deviceInfo,
+                                    { device ->
+                                        if (device == null) {
+                                            consoleList.add("Failed to open device " + deviceInfo);
+                                            disableSelf()
+                                        } else {
+                                            consoleList.add("Connected to $device")
 
-                            override fun onDeviceRemoved(device: MidiDeviceInfo) {
-                                consoleList.add("Midi Device removed: $device")
-                                // Handle device removal
-                                sendBroadcast(Intent("intent.tuoluoyi.exit"))
-                            }
-                        }
-                        midiManager?.registerDeviceCallback(deviceCallback, null)
-                        midiManager?.openDevice(
-                            deviceInfo,
-                            { device ->
-                                if (device == null) {
-                                    consoleList.add("Failed to open device " + deviceInfo);
-                                    disableSelf()
-                                } else {
-                                    consoleList.add("Connected to $device")
+                                            class MyReceiver : MidiReceiver() {
+                                                private val NOTE_ON = 0x90
+                                                private val NOTE_OFF = 0x80
+                                                private val ALIVE: Byte = 0xFE.toByte()
 
-                                    class MyReceiver : MidiReceiver() {
-                                        private val NOTE_ON = 0x90
-                                        private val NOTE_OFF = 0x80
-                                        private val ALIVE: Byte = 0xFE.toByte()
-
-                                        private fun logByteArray(prefix: String, data: ByteArray, offset: Int, count: Int) {
-                                            val builder = StringBuilder(prefix)
-                                            for (i in 0 until count) {
-                                                builder.append(String.format("0x%02X", data[offset + i]))
-                                                if (i != count - 1) {
-                                                    builder.append(", ")
-                                                }
-                                            }
-                                            consoleList.add(builder.toString())
-                                        }
-
-                                        @Throws(IOException::class)
-                                        override fun onSend(
-                                            data: ByteArray, offset: Int,
-                                            count: Int, timestamp: Long
-                                        ) {
-                                            // Ignore the alive signal
-                                            if (data[offset] == ALIVE) {
-                                                return
-                                            }
-                                            for (i in offset until offset + count) {
-                                                val byte = data[i].toInt() and 0xFF
-                                                if (byte >= 0x80) { // Status byte
-                                                    val messageType = byte and 0xF0
-
-                                                    if (messageType != NOTE_ON && messageType != NOTE_OFF) {
-                                                        continue
+                                                private fun logByteArray(
+                                                    prefix: String,
+                                                    data: ByteArray,
+                                                    offset: Int,
+                                                    count: Int
+                                                ) {
+                                                    val builder = StringBuilder(prefix)
+                                                    for (i in 0 until count) {
+                                                        builder.append(
+                                                            String.format(
+                                                                "0x%02X",
+                                                                data[offset + i]
+                                                            )
+                                                        )
+                                                        if (i != count - 1) {
+                                                            builder.append(", ")
+                                                        }
                                                     }
+                                                    consoleList.add(builder.toString())
+                                                }
+
+                                                @Throws(IOException::class)
+                                                override fun onSend(
+                                                    data: ByteArray, offset: Int,
+                                                    count: Int, timestamp: Long
+                                                ) {
+                                                    // Ignore the alive signal
+                                                    if (data[offset] == ALIVE) {
+                                                        return
+                                                    }
+                                                    for (i in offset until offset + count) {
+                                                        val byte = data[i].toInt() and 0xFF
+                                                        if (byte >= 0x80) { // Status byte
+                                                            val messageType = byte and 0xF0
+
+                                                            if (messageType != NOTE_ON && messageType != NOTE_OFF) {
+                                                                continue
+                                                            }
 //                                                  val channel = byte and 0x0F + 1
-                                                    val noteNumber = data[i + 1].toInt()
-                                                    val velocity = data[i + 2].toInt()
+                                                            val noteNumber = data[i + 1].toInt()
+                                                            val velocity = data[i + 2].toInt()
 
 
-
-                                                    var isDown: Boolean = messageType == NOTE_ON
+                                                            var isDown: Boolean =
+                                                                messageType == NOTE_ON
 
 //                                                    if (messageType == NOTE_ON) {
 //                                                        isDown = true
@@ -268,38 +256,76 @@ class tuoluoyiService : AccessibilityService() {
 //                                                        continue
 //                                                    }
 
-                                                    try {
-                                                        // Case 1, qwerty mode. Case 2, Piano Rooms mode
-                                                        if (current_midi_mode == 1) {
-                                                            if (noteNumber >= 0 && noteNumber <= 108) {
-                                                                iGamePad?.qwertyKey(noteNumber, isDown)
+                                                            try {
+                                                                // Case 1, qwerty mode. Case 2, Piano Rooms mode
+                                                                if (current_midi_mode == 1) {
+                                                                    if (noteNumber >= 0 && noteNumber <= 108) {
+                                                                        iGamePad?.qwertyKey(
+                                                                            noteNumber,
+                                                                            isDown
+                                                                        )
 
-    //                                                                ?.let { consoleList.add(it) }
-    //                                                          consoleList.add("Key pressed: IsDown $isDown, Note $noteNumber")
+                                                                        //                                                                ?.let { consoleList.add(it) }
+                                                                        //                                                          consoleList.add("Key pressed: IsDown $isDown, Note $noteNumber")
+                                                                    }
+                                                                } else { // current_midi_mode == 2
+                                                                    iGamePad?.pianoRoomsKey(
+                                                                        isDown,
+                                                                        noteNumber,
+                                                                        velocity
+                                                                    )
+                                                                }
+                                                            } catch (exception: Exception) {
+                                                                val errMsg =
+                                                                    "ERROR ISDOWN $isDown: $exception"
+
+                                                                consoleList.add(errMsg)
                                                             }
-                                                        } else { // current_midi_mode == 2
-                                                            iGamePad?.pianoRoomsKey(isDown, noteNumber, velocity)
                                                         }
-                                                    } catch (exception: Exception) {
-                                                        val errMsg = "ERROR ISDOWN $isDown: $exception"
-
-                                                        consoleList.add(errMsg)
                                                     }
                                                 }
                                             }
+
+                                            MIDIOutputPort?.close()
+                                            MIDIOutputPort = device.openOutputPort(0)
+                                            MIDIOutputPort?.connect(MyReceiver())
+
+
                                         }
-                                    }
+                                    },
+                                    Handler(Looper.getMainLooper())
+                                )
+                            }
+                        }
 
-                                    MIDIOutputPort?.close()
-                                    MIDIOutputPort = device.openOutputPort(0)
-                                    MIDIOutputPort?.connect(MyReceiver())
+                        // Check already connected devices
+                        val devices: Array<out MidiDeviceInfo>? = midiManager?.devices
 
-
-
+                        if (devices != null) {
+                            for (deviceInfo in devices) {
+                                if (deviceInfo.outputPortCount > 0) {
+                                    handleMidiDeviceInfo(deviceInfo)
                                 }
-                            },
-                            Handler(Looper.getMainLooper())
-                        )
+                            }
+                        }
+
+                        // Listen for when a midi device gets connected/disconnected
+                        deviceCallback = object : MidiManager.DeviceCallback() {
+                            override fun onDeviceAdded(deviceInfo: MidiDeviceInfo) {
+                                // Handle device addition
+                                consoleList.add("Midi Device added: $deviceInfo")
+                                handleMidiDeviceInfo(deviceInfo)
+                            }
+
+                            override fun onDeviceRemoved(deviceInfo: MidiDeviceInfo) {
+                                // Handle device removal
+                                consoleList.add("Midi Device removed: $deviceInfo")
+//                                sendBroadcast(Intent("intent.tuoluoyi.exit"))
+                            }
+                        }
+
+                        midiManager?.registerDeviceCallback(deviceCallback, null)
+
                         // END OF MIDI HANDLING LOGIC
                         isGyroEnabled = true
 
@@ -547,10 +573,6 @@ class tuoluoyiService : AccessibilityService() {
     override fun onInterrupt() {}
     override fun onKeyEvent(event: KeyEvent): Boolean {
         if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-            iGamePad?.qwertyKey(50, event.action == KeyEvent.ACTION_DOWN)
-            return true // Consumes the key event
-        }
-        if (event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
             iGamePad?.qwertyKey(50, event.action == KeyEvent.ACTION_DOWN)
             return true // Consumes the key event
         }
