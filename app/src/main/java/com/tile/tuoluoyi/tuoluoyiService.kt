@@ -92,6 +92,12 @@ class tuoluoyiService : AccessibilityService() {
     val consoleList = ConsoleList(this@tuoluoyiService)
     var current_midi_mode: Int = 1
 
+    fun startMainActivity() {
+        val launchIntent = Intent(this@tuoluoyiService, MainActivity::class.java)
+        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        this@tuoluoyiService.startActivity(launchIntent)
+    }
+
     val mBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
@@ -130,11 +136,12 @@ class tuoluoyiService : AccessibilityService() {
 
 
                     if (isGamePadCreated) {
-                        Toast.makeText(context, R.string.connect_success, Toast.LENGTH_SHORT).show()
+                        Log.d("MyTag", getString(R.string.connect_success))
+//                        Toast.makeText(context, R.string.connect_success, Toast.LENGTH_SHORT).show()
 
-                        Log.d("MyTag", "Attempting to access MIDI")
                         // MIDI HANDLING LOGIC
-                        consoleList.add("Attempting to initialize MIDI service")
+                        Log.d("MyTag", "Attempting to initialize MIDI service")
+
                         val midiManager = getSystemService(MIDI_SERVICE) as MidiManager
                         val devices: Array<MidiDeviceInfo> = midiManager.devices
                         var deviceInfo: MidiDeviceInfo? = null
@@ -278,8 +285,16 @@ class tuoluoyiService : AccessibilityService() {
                             showFloatWindow()
                         }
                     } else {
-                        Toast.makeText(context, "'iGamePad?.create() == true' check failed", Toast.LENGTH_SHORT).show()
-                        Log.d("MyTag", "CONNECTON FAILED: $")
+                        consoleList.add("Failed to create virtual keyboard, please attempt deactivating and activating virtual keyboard")
+
+                        // We attempt to manually close the gamepad then restart the mainactivity to update the button
+                        try {
+                            iGamePad?.closeAndExit()
+                        } catch (e: RemoteException) {
+                        }
+
+                        startMainActivity()
+                        sendBroadcast(Intent("intent.tuoluoyi.exit")) // Attempt to stop the accessibility service
                     }
                 }
             }
@@ -409,9 +424,7 @@ class tuoluoyiService : AccessibilityService() {
 //                                    // ENABLE HERE!
 //                                }
                                 Log.d("MyTag", "Starting app via float window click")
-                                val launchIntent = Intent(this@tuoluoyiService, MainActivity::class.java)
-                                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                this@tuoluoyiService.startActivity(launchIntent)
+                                startMainActivity()
                             } else {
                                 isThumbLPressed = !isThumbLPressed
                                 // Implement logic here for when the floating window is held and then released

@@ -24,6 +24,7 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.widget.Button;
 import android.widget.EditText;
@@ -39,7 +40,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -74,7 +78,7 @@ public class MainActivity extends Activity {
                 case "intent.tuoluoyi.exit":
                     Switch s1 = findViewById(R.id.s1);
                     s1.setChecked(false);
-                    stopService(new Intent(MainActivity.this, tuoluoyiService.class));
+                    stopService(new Intent(MainActivity.this, tuoluoyiService.class)); // Attempts to close the Accessibility Service
                     break;
             }
         }
@@ -99,7 +103,7 @@ public class MainActivity extends Activity {
                     s1.setEnabled(false);
                     s1.setChecked(false);
                     Toast.makeText(this, R.string.deactive_success, Toast.LENGTH_SHORT).show();
-                    sendBroadcast(new Intent("intent.tuoluoyi.exit")); // Communicates with the Accessibility Script
+                    sendBroadcast(new Intent("intent.tuoluoyi.exit")); // Communicates with the Accessibility Script which tries to close it
                     setViewsOnClick();
 //                    new Handler().postDelayed(this::finish, 1000);
                 })
@@ -213,11 +217,11 @@ public class MainActivity extends Activity {
                 requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 0);
                 return;
             }
+            final String serviceName = new ComponentName(getPackageName(), tuoluoyiService.class.getName()).flattenToString();
+            final String oldSetting = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
             if (isChecked) {
-                final String serviceName = new ComponentName(getPackageName(), tuoluoyiService.class.getName()).flattenToString();
-                final String oldSetting = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
-                final String newSetting = oldSetting == null ? serviceName : serviceName + ":" + oldSetting;
                 try {
+                    final String newSetting = oldSetting == null ? serviceName : serviceName + ":" + oldSetting;
                     Settings.Secure.putInt(getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED, 1);
                     Settings.Secure.putString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, newSetting);
                 } catch (Exception e) {
@@ -228,7 +232,25 @@ public class MainActivity extends Activity {
                     startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).putExtra(":settings:fragment_args_key", serviceName).putExtra(":settings:show_fragment_args", bundle));
                 }
             } else {
-                sendBroadcast(new Intent("intent.tuoluoyi.exit"));
+                try {
+                    sendBroadcast(new Intent("intent.tuoluoyi.exit"));
+
+                    // We attempt to manually revoke accessibility permission here
+                    if (oldSetting != null) {
+                        String[] enabledServicesList = oldSetting.split(":");
+                        List<String> enabledServices = new ArrayList<>(Arrays.asList(enabledServicesList));
+                        enabledServices.remove(serviceName);
+                        final String newSetting = TextUtils.join(":", enabledServices);
+
+                        Settings.Secure.putInt(getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED, 1);
+                        Settings.Secure.putString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, newSetting);
+                    }
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, R.string.manual_exit, Toast.LENGTH_SHORT).show();
+                    Bundle bundle = new Bundle();
+                    bundle.putString(":settings:fragment_args_key", serviceName);
+                    startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).putExtra(":settings:fragment_args_key", serviceName).putExtra(":settings:show_fragment_args", bundle));
+                }
             }
 
         });
