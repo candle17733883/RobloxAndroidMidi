@@ -53,9 +53,9 @@
         \n\n
         There are three ways for you to open this app for convenience\'s sake.
 
-        \nYou have the normal app button that shows up in your launcher like any other app.
-        In your notification bar, there is a tile which you could add to the notification tile tab which\'d allow you to launch the application quickly
-        Finally, a floating icon on your screen
+        \n1. You have the normal app button that shows up in your launcher like any other app.
+        \n2. In your notification bar, there is a tile which you could add to the notification tile tab which\'d allow you to launch the application quickly
+        \n3. Finally, a floating icon on your screen which appears whenever you start the MIDI Background Service
 
         \n\nYou have two primary modes, Qwerty mode and Piano Rooms.
 

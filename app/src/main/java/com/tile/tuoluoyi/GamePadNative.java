@@ -1,5 +1,7 @@
 package com.tile.tuoluoyi;
 
+import static com.tile.tuoluoyi.MainActivity.TAG;
+
 import android.app.IApplicationThread;
 import android.content.IIntentReceiver;
 import android.content.Intent;
@@ -210,7 +212,7 @@ public class GamePadNative {
                 // The following function creates an HID device only if it hasn't been created before
                 // In case it has been created before, it just returns the boolean indicating it has already
                 public boolean create() throws RemoteException {
-                    Log.d("MyTag", "HELLO WORLD THIS IS FROM GAMEPADNATIVE");
+                    Log.d(TAG, "GamePadNative has started successfully.");
                     if (!isUHidCreated)
                         isUHidCreated = nativeCreateUHid();
                     return isUHidCreated;

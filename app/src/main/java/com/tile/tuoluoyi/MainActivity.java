@@ -51,7 +51,7 @@ import java.util.zip.ZipFile;
 import rikka.shizuku.Shizuku;
 
 public class MainActivity extends Activity {
-
+    public static final String TAG = "RobloxAndroidMidi";
     boolean isListenerAdded = false, isBroadcastRegistered = false;
     Button B;
     Button midi_input_mode;

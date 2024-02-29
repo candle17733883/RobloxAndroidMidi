@@ -36,6 +36,7 @@ import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.widget.ImageView
 import android.widget.Toast
+import com.tile.tuoluoyi.MainActivity.TAG
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
@@ -59,7 +60,7 @@ class ConsoleList(private val Context: Context) {
                 Toast.LENGTH_SHORT
             ).show()
         }
-        Log.d("MyTag", message)
+        Log.d(TAG, message)
     }
 }
 
@@ -87,6 +88,9 @@ class tuoluoyiService : AccessibilityService() {
     var mSensorMgr: SensorManager? = null // 声明一个传感管理器对象
 
     // MIDI RELATED OPTIONS
+    var midiManager: MidiManager? = null
+    var deviceCallback: MidiManager.DeviceCallback? = null
+
     var MIDIOutputPort: MidiOutputPort? = null
 //    var binding: ActivityMainBinding? = null
     val consoleList = ConsoleList(this@tuoluoyiService)
@@ -128,7 +132,7 @@ class tuoluoyiService : AccessibilityService() {
 
                     try {
                         iGamePad?.changeMode(sp!!.getInt("currentMode", 0))
-                        Log.d("MyTag", "Attempting to create Virtual HID device")
+                        Log.d(TAG, "Attempting to create Virtual HID device")
                         isGamePadCreated = iGamePad?.create() == true // Checks whether if the gamepad was created or not
                     } catch (e: RemoteException) {
                         e.printStackTrace()
@@ -136,20 +140,22 @@ class tuoluoyiService : AccessibilityService() {
 
 
                     if (isGamePadCreated) {
-                        Log.d("MyTag", getString(R.string.connect_success))
+                        Log.d(TAG, getString(R.string.connect_success))
 //                        Toast.makeText(context, R.string.connect_success, Toast.LENGTH_SHORT).show()
 
                         // MIDI HANDLING LOGIC
-                        Log.d("MyTag", "Attempting to initialize MIDI service")
+                        Log.d(TAG, "Attempting to initialize MIDI service")
 
-                        val midiManager = getSystemService(MIDI_SERVICE) as MidiManager
-                        val devices: Array<MidiDeviceInfo> = midiManager.devices
+                        midiManager = getSystemService(MIDI_SERVICE) as MidiManager
+                        val devices: Array<out MidiDeviceInfo>? = midiManager?.devices
                         var deviceInfo: MidiDeviceInfo? = null
 
-                        for (device in devices) {
-                            if (device.outputPortCount > 0) {
-                                deviceInfo = device
-                                break
+                        if (devices != null) {
+                            for (device in devices) {
+                                if (device.outputPortCount > 0) {
+                                    deviceInfo = device
+                                    break
+                                }
                             }
                         }
 
@@ -189,7 +195,22 @@ class tuoluoyiService : AccessibilityService() {
                         var activeTouches = ConcurrentHashMap<Int, Int>()
                         val robloxKeys = arrayOf<String>("1", "!", "2", "@", "3", "4", "$", "5", "%", "6", "^", "7", "8", "*", "9", "(", "0", "q", "Q", "w", "W", "e", "E", "r", "t", "T", "y", "Y", "u", "i", "I", "o", "O", "p", "P", "a", "s", "S", "d", "D", "f", "g", "G", "h", "H", "j", "J", "k", "l", "L", "z", "Z", "x", "c", "C", "v", "V", "b", "B", "n", "m")
 
-                        midiManager.openDevice(
+
+                        // Listen for when a midi device gets connected/disconnected
+                        deviceCallback = object : MidiManager.DeviceCallback() {
+                            override fun onDeviceAdded(device: MidiDeviceInfo) {
+                                consoleList.add("Midi Device added: $device")
+                                // Handle device addition
+                            }
+
+                            override fun onDeviceRemoved(device: MidiDeviceInfo) {
+                                consoleList.add("Midi Device removed: $device")
+                                // Handle device removal
+                                sendBroadcast(Intent("intent.tuoluoyi.exit"))
+                            }
+                        }
+                        midiManager?.registerDeviceCallback(deviceCallback, null)
+                        midiManager?.openDevice(
                             deviceInfo,
                             { device ->
                                 if (device == null) {
@@ -272,6 +293,8 @@ class tuoluoyiService : AccessibilityService() {
                                     MIDIOutputPort?.close()
                                     MIDIOutputPort = device.openOutputPort(0)
                                     MIDIOutputPort?.connect(MyReceiver())
+
+
 
                                 }
                             },
@@ -423,7 +446,7 @@ class tuoluoyiService : AccessibilityService() {
 //                                } else {
 //                                    // ENABLE HERE!
 //                                }
-                                Log.d("MyTag", "Starting app via float window click")
+                                Log.d(TAG, "Starting app via float window click")
                                 startMainActivity()
                             } else {
                                 isThumbLPressed = !isThumbLPressed
@@ -508,6 +531,9 @@ class tuoluoyiService : AccessibilityService() {
     override fun onDestroy() {
         super.onDestroy()
 
+        if (deviceCallback != null) {
+            midiManager?.unregisterDeviceCallback(deviceCallback)
+        }
         MIDIOutputPort?.close()
         // We shouldn't close the HID whenever we stop the Accessibility Service which reads MIDI input
         // Instead, we let Main Activity's Deactivate button handle it
