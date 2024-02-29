@@ -69,7 +69,7 @@
         \nHuge thanks to WuDi-ZhanShen, yume-chan and the scrcpy project as this wouldn\'t have been possible without them.
 
         \n\nOh yeah back to what you were trying to actually do, to deactivate the virtual keyboard, you must hold down the "Deactivate Virtual Keyboard" button.</string>
-    <string name="connect_success">Starting accessibility service</string>
+    <string name="connect_success">Successfully created a virtual HID</string>
     <string name="connect_failed">Connection failed</string>
     <string name="pause">Pause</string>
     <string name="resume">Resume</string>
