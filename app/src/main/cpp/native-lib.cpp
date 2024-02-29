@@ -241,6 +241,10 @@ std::unordered_map<std::string, int> numpad_to_hex_map = {
         {"8", 0x60},
         {"9", 0x61},
         {"0", 0x62},
+
+        // 0123456789 (10) (11)
+        {"10", 0x56}, // keycode of -
+        {"11", 0x57}, // keycode of +
 };
 
 // Function to write 8 integers to the file descriptor
@@ -295,6 +299,9 @@ void SendEncodedKey(int a, int b, int c, int d) {
     tapKeyboard(0x00, 0x00, numpad_to_hex_map[std::to_string(c)]);
 
     tapKeyboard(0x00, 0x00, numpad_to_hex_map[std::to_string(d)]);
+
+
+//    __android_log_print(ANDROID_LOG_WARN, "MyTag_value_of_d", "%d %d %d %d", a,b,c,d);
 }
 
 extern "C"
