@@ -137,7 +137,19 @@
                 <TableRow/>
 
             </TableLayout>
+
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/credits"
+            android:gravity="center"
+            android:textAllCaps="false"
+            android:textAppearance="@android:style/TextAppearance.Material.Large"
+            android:textColor="@color/white"
+            android:textStyle="italic" />
 
     </LinearLayout>
 

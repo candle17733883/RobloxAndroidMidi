@@ -82,4 +82,5 @@
     <string name="manaual_open">Please open my accessibility service</string>
     <string name="manual_exit">Failed, please force stop the app through settings</string>
     <string name="change_mode">ChangeToMode</string>
+    <string name="credits">Made by EDllT</string>
 </resources>
