@@ -46,6 +46,12 @@
             android:text="@string/service_state" />
 
         <Switch
+            android:id="@+id/ctrl_octave_switch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/ctrl_octave_text" />
+
+        <Switch
             android:id="@+id/s2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -95,6 +95,7 @@ class tuoluoyiService : AccessibilityService() {
 //    var binding: ActivityMainBinding? = null
     val consoleList = ConsoleList(this@tuoluoyiService)
     var current_midi_mode: Int = 1
+    var ctrl_octave: Boolean = true
 
     fun startMainActivity() {
         val launchIntent = Intent(this@tuoluoyiService, MainActivity::class.java)
@@ -118,6 +119,10 @@ class tuoluoyiService : AccessibilityService() {
                     current_midi_mode = sp!!.getInt("midi_input_mode", 1)
                 }
 
+                "intent.tuoluoyi.ctrl_octave"-> {
+                    ctrl_octave = sp!!.getBoolean("ctrl_octave", true)
+                }
+
                 "intent.tuoluoyi.sendBinder" -> {
                     val binderContainer = intent.getParcelableExtra<BinderContainer>("binder")
                     val binder = binderContainer!!.binder
@@ -129,6 +134,7 @@ class tuoluoyiService : AccessibilityService() {
                     iGamePad = IGamePad.Stub.asInterface(binder)
 
                     current_midi_mode = sp!!.getInt("midi_input_mode", 1)
+                    ctrl_octave = sp!!.getBoolean("ctrl_octave", true)
 
                     try {
                         iGamePad?.changeMode(sp!!.getInt("currentMode", 0))
@@ -232,6 +238,7 @@ class tuoluoyiService : AccessibilityService() {
                                                     if (data[offset] == ALIVE) {
                                                         return
                                                     }
+//                                                    logByteArray("LOGBYTEARRAY : ", data, offset, count)
                                                     for (i in offset until offset + count) {
                                                         val byte = data[i].toInt() and 0xFF
                                                         if (byte >= 0x80) { // Status byte
@@ -259,7 +266,7 @@ class tuoluoyiService : AccessibilityService() {
                                                             try {
                                                                 // Case 1, qwerty mode. Case 2, Piano Rooms mode
                                                                 if (current_midi_mode == 1) {
-                                                                    if (noteNumber >= 0 && noteNumber <= 108) {
+                                                                    if ((ctrl_octave==true && noteNumber >= 21 && noteNumber <= 107) or (ctrl_octave==false && noteNumber >= 36 && noteNumber <= 96)) {
                                                                         iGamePad?.qwertyKey(
                                                                             noteNumber,
                                                                             isDown
@@ -389,6 +396,7 @@ class tuoluoyiService : AccessibilityService() {
         registerReceiver(mBroadcastReceiver, IntentFilter("intent.tuoluoyi.exit"))
         registerReceiver(mBroadcastReceiver, IntentFilter("intent.tuoluoyi.sendBinder"))
         registerReceiver(mBroadcastReceiver, IntentFilter("intent.tuoluoyi.current_midi_mode"))
+        registerReceiver(mBroadcastReceiver, IntentFilter("intent.tuoluoyi.ctrl_octave"))
         registerReceiver(
             mBroadcastReceiver,
             IntentFilter("android.intent.action.CONFIGURATION_CHANGED")

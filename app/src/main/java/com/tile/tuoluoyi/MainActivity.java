@@ -255,6 +255,13 @@ public class MainActivity extends Activity {
 
         });
 
+        Switch ctrl_octave_switch = findViewById(R.id.ctrl_octave_switch);
+        ctrl_octave_switch.setChecked(sp.getBoolean("ctrl_octave", true));
+        ctrl_octave_switch.setOnCheckedChangeListener((compoundButton, isChecked) -> {
+            sp.edit().putBoolean("ctrl_octave", isChecked).apply();
+            sendBroadcast(new Intent("intent.tuoluoyi.ctrl_octave"));
+        });
+
         Switch s2 = findViewById(R.id.s2);
         s2.setChecked(sp.getBoolean("foreground", true));
         s2.setOnCheckedChangeListener((compoundButton, isChecked) -> {

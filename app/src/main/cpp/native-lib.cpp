@@ -24,6 +24,7 @@
 
 static int uhid_fd;
 static struct uhid_event uhidEvent;
+const char *TAG = "RobloxAndroidMidi";
 
 // Keyboard description
 static unsigned char description[] = {
@@ -62,16 +63,47 @@ static unsigned char description[] = {
 
 };
 
-const int NUM_KEYS = 61;
+const int NUM_KEYS = 88;
 
-std::array<std::string, NUM_KEYS> pianoQwertyKeys = {"1", "!", "2", "@", "3", "4", "$", "5", "%",
-                                      "6", "^", "7", "8", "*", "9", "(", "0", "q", "Q", "w", "W",
-                                      "e", "E", "r", "t", "T", "y", "Y", "u", "i", "I", "o", "O",
-                                      "p", "P", "a", "s", "S", "d", "D", "f", "g", "G", "h", "H",
-                                      "j", "J", "k", "l", "L", "z", "Z", "x", "c", "C", "v", "V",
-                                      "b", "B", "n", "m"};
+std::array<std::string, NUM_KEYS> pianoQwertyKeys = {
+        // A0
+        "ctrl_1", "ctrl_2", "ctrl_3", "ctrl_4", "ctrl_5",
+        "ctrl_6", "ctrl_7", "ctrl_8", "ctrl_9", "ctrl_0", "ctrl_q", "ctrl_w",
+        "ctrl_e", "ctrl_r", "ctrl_t",
+
+        // Normal keys C2 to C7
+        "1", "!", "2", "@", "3", "4", "$", "5", "%",
+        "6", "^", "7", "8", "*", "9", "(", "0", "q", "Q", "w", "W",
+        "e", "E", "r", "t", "T", "y", "Y", "u", "i", "I", "o", "O",
+        "p", "P", "a", "s", "S", "d", "D", "f", "g", "G", "h", "H",
+        "j", "J", "k", "l", "L", "z", "Z", "x", "c", "C", "v", "V",
+        "b", "B", "n", "m",
+
+        // C# 7 to C8
+        "ctrl_y", "ctrl_u", "ctrl_i", "ctrl_o",
+        "ctrl_p", "ctrl_a", "ctrl_s", "ctrl_d", "ctrl_f", "ctrl_g", "ctrl_h",
+        "ctrl_j"
+};
 
 std::unordered_map<std::string, int> qwerty_to_hex_map = {
+        // A0
+        {"ctrl_0", 0x27},
+        {"ctrl_1", 0x1E},
+        {"ctrl_2", 0x1F},
+        {"ctrl_3", 0x20},
+        {"ctrl_4", 0x21},
+        {"ctrl_5", 0x22},
+        {"ctrl_6", 0x23},
+        {"ctrl_7", 0x24},
+        {"ctrl_8", 0x25},
+        {"ctrl_9", 0x26},
+        {"ctrl_q", 0x14},
+        {"ctrl_w", 0x1A},
+        {"ctrl_e", 0x08},
+        {"ctrl_r", 0x15},
+        {"ctrl_t", 0x17},
+
+        // Normal keys C2 to C7
         {"a", 0x04},
         {"b", 0x05},
         {"c", 0x06},
@@ -146,9 +178,41 @@ std::unordered_map<std::string, int> qwerty_to_hex_map = {
         {"&", 0x24},
         {"*", 0x25},
         {"(", 0x26},
+
+        // C# 7 to C8
+
+        {"ctrl_y", 0x1C},
+        {"ctrl_u", 0x18},
+        {"ctrl_i", 0x0C},
+        {"ctrl_o", 0x12},
+        {"ctrl_p", 0x13},
+        {"ctrl_a", 0x04},
+        {"ctrl_s", 0x16},
+        {"ctrl_d", 0x07},
+        {"ctrl_f", 0x09},
+        {"ctrl_g", 0x0A},
+        {"ctrl_h", 0x0B},
+        {"ctrl_j", 0x0D},
 };
 
 std::unordered_map<std::string, int> meta_key_map = {
+        // C1 (left ctrl)
+        {"ctrl_0", 0x01},
+        {"ctrl_1", 0x01},
+        {"ctrl_2", 0x01},
+        {"ctrl_3", 0x01},
+        {"ctrl_4", 0x01},
+        {"ctrl_5", 0x01},
+        {"ctrl_6", 0x01},
+        {"ctrl_7", 0x01},
+        {"ctrl_8", 0x01},
+        {"ctrl_9", 0x01},
+        {"ctrl_q", 0x01},
+        {"ctrl_w", 0x01},
+        {"ctrl_e", 0x01},
+        {"ctrl_r", 0x01},
+        {"ctrl_t", 0x01},
+
         {"a", 0x00},
         {"b", 0x00},
         {"c", 0x00},
@@ -186,7 +250,7 @@ std::unordered_map<std::string, int> meta_key_map = {
         {"8", 0x00},
         {"9", 0x00},
 
-        // Capitals
+        // Capitals (left shift)
         {"A", 0x02},
         {"B", 0x02},
         {"C", 0x02},
@@ -222,7 +286,22 @@ std::unordered_map<std::string, int> meta_key_map = {
         {"^", 0x02},
         {"&", 0x02},
         {"*", 0x02},
-        {"(", 0x02}
+        {"(", 0x02},
+
+        // C# 7 to C8
+
+        {"ctrl_y", 0x01},
+        {"ctrl_u", 0x01},
+        {"ctrl_i", 0x01},
+        {"ctrl_o", 0x01},
+        {"ctrl_p", 0x01},
+        {"ctrl_a", 0x01},
+        {"ctrl_s", 0x01},
+        {"ctrl_d", 0x01},
+        {"ctrl_f", 0x01},
+        {"ctrl_g", 0x01},
+        {"ctrl_h", 0x01},
+        {"ctrl_j", 0x01},
 };
 
 std::unordered_map<std::string, int> numpad_to_hex_map = {
@@ -301,13 +380,13 @@ void SendEncodedKey(int a, int b, int c, int d) {
     tapKeyboard(0x00, 0x00, numpad_to_hex_map[std::to_string(d)]);
 
 
-//    __android_log_print(ANDROID_LOG_WARN, "MyTag_value_of_d", "%d %d %d %d", a,b,c,d);
+//    __android_log_print(ANDROID_LOG_WARN, TAG, "%d %d %d %d", a,b,c,d);
 }
 
 extern "C"
 JNIEXPORT jboolean JNICALL
 Java_com_tile_tuoluoyi_GamePadNative_nativeCreateUHid(JNIEnv *env, jclass clazz) {
-    __android_log_print(ANDROID_LOG_WARN, "MyTag", "HELLO WORLD THIS IS FROM JNI");
+    __android_log_print(ANDROID_LOG_WARN, TAG, "HELLO WORLD THIS IS FROM JNI");
     if ((uhid_fd = open("/dev/uhid", O_RDWR | O_NDELAY)) < 0) {
         return false;//error process.
     }
@@ -351,50 +430,53 @@ Java_com_tile_tuoluoyi_GamePadNative_nativeCloseUHid(JNIEnv *env, jclass clazz) 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_tile_tuoluoyi_GamePadNative_nativeQwertyKey(JNIEnv *env,
-                                                    jclass thiz,
-                                                    jint noteNumber,
-                                                    jboolean isDown) {
-        if (!isDown) {
+                                                     jclass thiz,
+                                                     jint noteNumber,
+                                                     jboolean isDown) {
+    if (!isDown) {
 //            return 0; // We won't bother with keys being held down(in qwerty mode) as most roblox piano games don't support it anyway
-            return;
+        return;
 
-            // If you however wanted to support it(feel free to send a pr), we'd need to essentially do
-            // what gaming keyboards do and that is create multiple instances of a virtual keyboard
-            // to effectively increase the number of keys that we could press simultaneously
-        }
-        //# C2 is noteNumber: 36 is 0
-        //# C7 is noteNumber: 96 is m
-        if (!(noteNumber >= 36 && noteNumber <= 96)) {
-            __android_log_print(ANDROID_LOG_ERROR, "MyTag", "noteNumber outside valid range!");
+        // If you however wanted to support it(feel free to send a pr), we'd need to essentially do
+        // what gaming keyboards do and that is create multiple instances of a virtual keyboard
+        // to effectively increase the number of keys that we could press simultaneously
+    }
+    //# C2 is noteNumber: 36 is 0
+    //# C7 is noteNumber: 96 is m
+    // NOTE: Even though technically speaking the maximum noteNumber should be 108, it can't because
+    // for some reason the MidiService considers everything upwards of 108 to have the same noteNumber
+    if (!(noteNumber >= 21 && noteNumber <= 107)) {
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "noteNumber outside valid range!");
+        return;
 //            return 500;
-        }
+    }
 
 
-        // Converts the noteNumber to the corresponding qwerty key [36-36 = index 0 = "1", 96-36 = index 60 = "m"]
-        std::string qwerty_key = pianoQwertyKeys[noteNumber - 36];
+    // Converts the noteNumber to the corresponding qwerty key [36-36 = index 0 = "1", 96-36 = index 60 = "m"]
+    std::string qwerty_key = pianoQwertyKeys[noteNumber - 21];
 
-        // Converts the qwerty key into a hex value ["1" = 0x31, "m" = 0x10]
-        int key_hex_value = qwerty_to_hex_map[qwerty_key];
+    // Converts the qwerty key into a hex value ["1" = 0x31, "m" = 0x10]
+    int key_hex_value = qwerty_to_hex_map[qwerty_key];
 
-        // Checks whether if the associated qwerty key has to be held with a meta key(in our case left shift to indicate it's capital)
-        int meta_key_value = meta_key_map[qwerty_key];
+    // Checks whether if the associated qwerty key has to be held with a meta key(in our case left shift to indicate it's capital)
+    int meta_key_value = meta_key_map[qwerty_key];
 
-        // quick tap
-        tapKeyboard(meta_key_value,0x00,key_hex_value);
+    // quick tap
+    tapKeyboard(meta_key_value,0x00,key_hex_value);
 
-        // For Optimization's sake, we log directly instead of returning(which I think will improve performance)
+    // For Optimization's sake, we log directly instead of returning(which I think will improve performance)
 
-        __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "%s", ("Acknowledged : " + std::to_string(noteNumber) + " " + std::string(isDown ? "true" : "false")).c_str());
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "%s", ("Acknowledged : " + std::to_string(noteNumber) + " " + std::string(isDown ? "true" : "false")).c_str());
 //        return 0;
 }
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_tile_tuoluoyi_GamePadNative_nativePianoRoomsKey(JNIEnv *env,
-                                                     jclass thiz,
-                                                     jboolean isDown,
-                                                     jint noteNumber,
-                                                     jint velocity) {
+                                                         jclass thiz,
+                                                         jboolean isDown,
+                                                         jint noteNumber,
+                                                         jint velocity) {
 
 //    # We are dividing by 12 because we will be encoding it with 12 keys only(The keys are "0123456789-+")
 //    # Additionally, it adds up nicely because there are 12 semitones in one octave
@@ -431,6 +513,6 @@ Java_com_tile_tuoluoyi_GamePadNative_nativePianoRoomsKey(JNIEnv *env,
 
     // For Optimization's sake, we log directly instead of returning(which I think will improve performance)
 
-    __android_log_print(ANDROID_LOG_DEBUG, "MyTag", "%s", ("Acknowledged PR : " + std::to_string(noteNumber) + " " + std::string(isDown ? "true" : "false")).c_str());
+    __android_log_print(ANDROID_LOG_DEBUG, TAG, "%s", ("Acknowledged PR : " + std::to_string(noteNumber) + " " + std::string(isDown ? "true" : "false")).c_str());
 //        return 0;
 }

@@ -5,6 +5,7 @@
     <string name="click_to_active">Activate Virtual Keyboard</string>
     <string name="play_midi">Load Midi File(soon)</string>
     <string name="service_state">MIDI Background Service</string>
+    <string name="ctrl_octave_text">Qwerty CTRL for more Octaves</string>
     <string name="send_notification">Service Notification</string>
     <string name="invert_x">X-axis reverse</string>
     <string name="invert_y">Y-axis reverse</string>
