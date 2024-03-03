@@ -239,6 +239,7 @@ class tuoluoyiService : AccessibilityService() {
                                                         return
                                                     }
 //                                                    logByteArray("LOGBYTEARRAY : ", data, offset, count)
+                                                    val noteArrayInfo: MutableList<Int> = ArrayList()
                                                     for (i in offset until offset + count) {
                                                         val byte = data[i].toInt() and 0xFF
                                                         if (byte >= 0x80) { // Status byte
@@ -247,12 +248,12 @@ class tuoluoyiService : AccessibilityService() {
                                                             if (messageType != NOTE_ON && messageType != NOTE_OFF) {
                                                                 continue
                                                             }
-//                                                  val channel = byte and 0x0F + 1
+//                                                          val channel = byte and 0x0F + 1
                                                             val noteNumber = data[i + 1].toInt()
                                                             val velocity = data[i + 2].toInt()
 
 
-                                                            var isDown: Boolean =
+                                                            val isDown: Boolean =
                                                                 messageType == NOTE_ON
 
 //                                                    if (messageType == NOTE_ON) {
@@ -276,10 +277,12 @@ class tuoluoyiService : AccessibilityService() {
                                                                         //                                                          consoleList.add("Key pressed: IsDown $isDown, Note $noteNumber")
                                                                     }
                                                                 } else { // current_midi_mode == 2
-                                                                    iGamePad?.pianoRoomsKey(
-                                                                        isDown,
+                                                                    // A list containing a list which contains, [isDown[1 or 0], noteNumber, velocity]
+                                                                    noteArrayInfo.addAll(listOf(
+                                                                        if (isDown) 1 else 0,
                                                                         noteNumber,
                                                                         velocity
+                                                                        )
                                                                     )
                                                                 }
                                                             } catch (exception: Exception) {
@@ -290,6 +293,20 @@ class tuoluoyiService : AccessibilityService() {
                                                             }
                                                         }
                                                     }
+                                                    // Outside loop!
+
+                                                    // We need to convert it into an IntArray before passing it over
+                                                    // to AIDL
+                                                    val size = noteArrayInfo.size
+
+                                                    val noteIntArray = IntArray(size)
+                                                    for (i in 0 until size) {
+                                                        noteIntArray[i] = noteArrayInfo[i]
+                                                    }
+                                                    iGamePad?.pianoRoomsKey(noteIntArray)
+
+
+                                                    consoleList.add("noteArrayInfo : $noteArrayInfo")
                                                 }
                                             }
 

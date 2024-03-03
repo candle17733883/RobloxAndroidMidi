@@ -23,5 +23,5 @@ interface IGamePad {
 //    void syncPrefs(boolean invX,boolean invY,int sensityX,int sensityY);
 
     void qwertyKey(int key, boolean isDown);
-    void pianoRoomsKey(boolean isDown, int noteNumber, int velocity);
+    void pianoRoomsKey(in int[] noteIntArray);
 }

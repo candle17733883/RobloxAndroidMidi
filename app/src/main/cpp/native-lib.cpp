@@ -21,6 +21,7 @@
 #include <unordered_map>
 #include <string>
 #include <array>
+#include <vector>
 
 static int uhid_fd;
 static struct uhid_event uhidEvent;
@@ -326,8 +327,29 @@ std::unordered_map<std::string, int> numpad_to_hex_map = {
         {"11", 0x57}, // keycode of +
 };
 
+std::unordered_map<std::string, std::string> character_map = {
+        {"*", "*"},
+        {"-", "-"},
+        {"+", "+"},
+
+
+        {"1", "1"},
+        {"2", "2"},
+        {"3", "3"},
+        {"4", "4"},
+        {"5", "5"},
+        {"6", "6"},
+        {"7", "7"},
+        {"8", "8"},
+        {"9", "9"},
+        {"0", "0"},
+
+        {"10", "-"},
+        {"11", "+"},
+};
+
 // Function to write 8 integers to the file descriptor
-void writeKeyboard(int metakey0, int reserved1, int data2) {
+void writeKeyboard(int metakey0=0x00, int reserved1=0x00, int data2=0x00, int data3=0x00, int data4=0x00, int data5=0x00, int data6=0x00, int data7=0x00) {
 
     // https://d1.amobbs.com/bbs_upload782111/files_47/ourdev_692986N5FAHU.pdf
     // https://www.usbzh.com/article/detail-326.html
@@ -337,14 +359,46 @@ void writeKeyboard(int metakey0, int reserved1, int data2) {
 
     // Keyboard keys in HEX
     uhidEvent.u.input.data[2] = data2;
+    uhidEvent.u.input.data[3] = data3;
+    uhidEvent.u.input.data[4] = data4;
+    uhidEvent.u.input.data[5] = data5;
+    uhidEvent.u.input.data[6] = data6;
+    uhidEvent.u.input.data[7] = data7;
     write(uhid_fd, &uhidEvent, sizeof(uhidEvent));
 
 //    return 0;
 }
-void tapKeyboard(int metakey0, int reserved1, int data2) {
-    writeKeyboard(metakey0, reserved1, data2);
-    writeKeyboard(0x00, 0x00, 0x00);
+
+void writeKeyboardVector(int metakey0, int reserved1, const std::vector<int>& data) {
+    if (data.size() > 6) {
+        __android_log_print(ANDROID_LOG_ERROR, TAG, "Error: Too many data arguments");
+        return;
+    }
+
+    // https://d1.amobbs.com/bbs_upload782111/files_47/ourdev_692986N5FAHU.pdf
+    // https://www.usbzh.com/article/detail-326.html
+
+    uhidEvent.u.input.data[0] = metakey0;
+    uhidEvent.u.input.data[1] = reserved1; // Reserved
+
+    // Keyboard keys in HEX
+    for (size_t i = 0; i < data.size(); i++) {
+        __android_log_print(ANDROID_LOG_WARN, "MESSAGEEEE", "%d", data[i]);
+        uhidEvent.u.input.data[i + 2] = data[i];
+    }
+
+    write(uhid_fd, &uhidEvent, sizeof(uhidEvent));
+
+    writeKeyboard(); // releases all the held keys
 }
+
+// TODO: Change implementation to use Vectors for both this and the original writeKeyboard function
+void tapKeyboard(int metakey0=0x00, int reserved1=0x00, int data2=0x00, int data3=0x00, int data4=0x00, int data5=0x00, int data6=0x00, int data7=0x00) {
+    writeKeyboard(metakey0, reserved1, data2, data3, data4, data5, data6, data7);
+    writeKeyboard();
+}
+
+
 //void writeKeyboard(int metakey0, int reserved1, int data2, int data3, int data4, int data5,
 //                  int data6, int data7) {
 //
@@ -366,20 +420,59 @@ void tapKeyboard(int metakey0, int reserved1, int data2) {
 ////    return 0;
 //}
 
+// This function slices a string in such a way that no keys are repeated
+// For example, *6629*6000 becomes
+// *6 629* 60 0 0
+std::vector<std::string> splitString(const std::string& input) {
+    std::vector<std::string> result;
+    result.reserve(input.length());
+    std::string current;
+    uint32_t current_bits = 0;
+
+    for (char c : input) {
+        uint32_t bit_index = static_cast<uint32_t>(c - '*');
+        if (!(current_bits & (1 << bit_index))) {
+            current += c;
+            current_bits |= (1 << bit_index);
+        } else {
+            result.push_back(current);
+            current = c;
+            current_bits = (1 << bit_index);
+        }
+    }
+
+    result.push_back(current);
+
+    return result;
+}
+
 // Function to write 8 integers to the file descriptor
-void SendEncodedKey(int a, int b, int c, int d) {
-    tapKeyboard(0x00, 0x00, numpad_to_hex_map["*"]);
+void SendEncodedKeys(std::string encodedCharacters) {
+    // encodedCharacters = *6629*6000
 
+    std::vector<std::string> result = splitString(encodedCharacters);
+    //*6
+    //629*
+    //60
+    //0
+    //0
 
-    tapKeyboard(0x00, 0x00, numpad_to_hex_map[std::to_string(a)]);
+    for (const auto& stringSequence : result) {
+        // loop through the string and convert each character into the corresponding hex key
+        // store each one in a vector then call a function which'd process the vector
+        std::vector<int> hex_values;
 
-    tapKeyboard(0x00, 0x00, numpad_to_hex_map[std::to_string(b)]);
+        for (char c : stringSequence) {
+            std::string key = std::string(1, c);
+            hex_values.push_back(numpad_to_hex_map[key]);
 
-    tapKeyboard(0x00, 0x00, numpad_to_hex_map[std::to_string(c)]);
+            __android_log_print(ANDROID_LOG_WARN, "CHARACTER", "%c", c);
+            __android_log_print(ANDROID_LOG_WARN, "MAPPING", "%d", numpad_to_hex_map[key]);
+        }
 
-    tapKeyboard(0x00, 0x00, numpad_to_hex_map[std::to_string(d)]);
-
-
+        writeKeyboardVector(0x00, 0x00, hex_values);
+        __android_log_print(ANDROID_LOG_WARN, TAG, "SEPARATE");
+    }
 //    __android_log_print(ANDROID_LOG_WARN, TAG, "%d %d %d %d", a,b,c,d);
 }
 
@@ -474,45 +567,65 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_tile_tuoluoyi_GamePadNative_nativePianoRoomsKey(JNIEnv *env,
                                                          jclass thiz,
-                                                         jboolean isDown,
-                                                         jint noteNumber,
-                                                         jint velocity) {
-
-//    # We are dividing by 12 because we will be encoding it with 12 keys only(The keys are "0123456789-+")
-//    # Additionally, it adds up nicely because there are 12 semitones in one octave
-//
-//    # C0 aka Note C at Octave 0
-//    # Note number: 12
-//    # O = msg.note / 12 = 12 / 12 = 1
-//    # Octave = 1 - O = 1 - 1 = 0
-//
-//    # C4 aka Note C at Octave 4
-//    # Note number: 60
-//    # O = msg.note / 12 = 60 /12 = 5
-//    # Octave = 1 - O = 5 - 1 = 4
-//
-//    # To decode
-//    # (DIV_VAL * 12) + MODULOS_VAL
+                                                         jintArray noteInfo) {
+    //    # We are dividing by 12 because we will be encoding it with 12 keys only(The keys are "0123456789-+")
+    //    # Additionally, it adds up nicely because there are 12 semitones in one octave
+    //
+    //    # C0 aka Note C at Octave 0
+    //    # Note number: 12
+    //    # O = msg.note / 12 = 12 / 12 = 1
+    //    # Octave = 1 - O = 1 - 1 = 0
+    //
+    //    # C4 aka Note C at Octave 4
+    //    # Note number: 60
+    //    # O = msg.note / 12 = 60 /12 = 5
+    //    # Octave = 1 - O = 5 - 1 = 4
+    //
+    //    # To decode
+    //    # (DIV_VAL * 12) + MODULOS_VAL
 
     // NOTE: Because we explicitly declared the arguments as an int, C++ automatically discards
     // the decimal bit for us allowing us to skip having to floor(this wouldn't be possible if the values given were negative)
 
-    int EncodedOctaveNo = noteNumber / 12;
-    int EncodedNoteNo = noteNumber % 12;
+    jsize length = env->GetArrayLength(noteInfo);
 
-    // Velocity defaults to 0 which tells the game that the notes are no longer being held
-    int EncodedVelocityA = 0;
-    int EncodedVelocityB = 0;
+    jint *int_elements = env->GetIntArrayElements(noteInfo, NULL);
 
-    if (isDown == true) {
-        EncodedVelocityA = velocity / 12;
-        EncodedVelocityB = velocity % 12;
+    std::string encodedCharacters;
+
+    for (int i = 0; i < length; i+=3) {
+        int isDown = int_elements[i];
+        int noteNumber = int_elements[i+1];
+        int velocity = int_elements[i+2];
+
+
+        int EncodedOctaveNo = noteNumber / 12;
+        int EncodedNoteNo = noteNumber % 12;
+
+        // Velocity defaults to 0 which tells the game that the notes are no longer being held
+        int EncodedVelocityA = 0;
+        int EncodedVelocityB = 0;
+
+        if (isDown) {
+            EncodedVelocityA = velocity / 12;
+            EncodedVelocityB = velocity % 12;
+        }
+
+        encodedCharacters += '*';
+
+        encodedCharacters += character_map[std::to_string(EncodedOctaveNo)];
+        encodedCharacters += character_map[std::to_string(EncodedNoteNo)];
+        encodedCharacters += character_map[std::to_string(EncodedVelocityA)];
+        encodedCharacters += character_map[std::to_string(EncodedVelocityB)];
     }
 
-    SendEncodedKey(EncodedOctaveNo, EncodedNoteNo, EncodedVelocityA, EncodedVelocityB);
 
-    // For Optimization's sake, we log directly instead of returning(which I think will improve performance)
 
-    __android_log_print(ANDROID_LOG_DEBUG, TAG, "%s", ("Acknowledged PR : " + std::to_string(noteNumber) + " " + std::string(isDown ? "true" : "false")).c_str());
-//        return 0;
+    SendEncodedKeys(encodedCharacters);
+
+    __android_log_print(ANDROID_LOG_DEBUG, "C Code", "%s", encodedCharacters.c_str());
+
+//     For Optimization's sake, we log directly instead of returning(which I think will improve performance)
+//     return 0;
+    env->ReleaseIntArrayElements(noteInfo, int_elements, JNI_ABORT);
 }

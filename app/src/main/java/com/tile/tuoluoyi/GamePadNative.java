@@ -20,6 +20,9 @@ import android.view.MotionEvent;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 public class GamePadNative {
@@ -152,7 +155,7 @@ public class GamePadNative {
 
     static native void nativeQwertyKey(int noteNumber, boolean isDown);
 
-    static native void nativePianoRoomsKey(boolean isDown, int noteNumber, int velocity);
+    static native void nativePianoRoomsKey(int[] noteIntArray);
 
     private static void sendBinderToAppByStickyBroadcast() {
 
@@ -188,8 +191,15 @@ public class GamePadNative {
                 }
 
                 @Override
-                public void pianoRoomsKey(boolean isDown, int noteNumber, int velocity) throws RemoteException {
-                    nativePianoRoomsKey(isDown, noteNumber, velocity);
+                public void pianoRoomsKey(int[] noteIntArray) throws RemoteException {
+//                    List<Integer> noteArrayList = new ArrayList<>();
+//                    for (int note : noteIntList) {
+//                        noteArrayList.add(note);
+//                    }
+//                    Log.d("A:", noteArrayList.toString());
+                    Log.d("B:", Arrays.toString(noteIntArray));
+
+                    nativePianoRoomsKey(noteIntArray);
                 }
 
                 @Override
