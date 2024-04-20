@@ -1,9 +1,33 @@
-# Android-Gyroscope-MC
-  用陀螺仪玩安卓MC！
-# 原理
-  利用Linux的UInput机制，使用adb权限或者root权限注册一个虚拟硬件手柄到系统。然后将陀螺仪数据实时转化为虚拟手柄的右摇杆的移动。
-# 为什么使用虚拟手柄，而不使用虚拟触控或者虚拟鼠标
-  虚拟触控会和真实手指的触控冲突 (虚拟触控无法模拟多点触控，问题核心就是无法实时得知10个触控槽位中哪些是有触控的，然后将虚拟触控安排在空闲的第一个槽位)，且虚拟触控划到屏幕边缘时就没办法继续划了。另外，在没有新触控方案的MC版本上，玩家划屏时是不能跳跃、放置、使用物品、攻击的；虚拟触控的划屏自然就会导致玩家坐牢，什么都干不了。<br>
-  虚拟鼠标也会和真实手指的触控冲突。鼠标存在时，安卓系统会直接自动屏蔽全部硬件触控，这是一个无解的问题，并且很少有人注意到这个问题。大家一般都是直接接键鼠，然后纯键鼠操作；很少有人试过鼠标和触控同时操作。不过现在看到这里您就可以去试一试了，您将发现鼠标移动时安卓系统会直接屏蔽掉手指触控。<br>
-  而虚拟手柄是唯一的不和触控存在冲突的方式。
-  
+# Note
+This app is still in development due to the fact that I wasn't able to come up with a solution to work with the keystroke input delay when attempting to use Piano Rooms mode. Additionally, I hadn't implemented a solution to hold down multiple keys when using qwerty since ONE emulated physical keyboard has a limit of 6 regular qwerty keys that could be held down simultaneously.(meta keys are handled slightly differently but that's irrelevant to the problem). I had thought of some solutions like emulating more than one physical keyboard at once and various others but couldn't really find the time nor motivation to do it.
+At the app's current state, it works best in qwerty mode in a roblox game that allows you to turn on sustain.
+
+If you have experience with android development then help would be greatly appreciated.
+
+TL;DR: Piano rooms mode has delay problems, Qwerty mode can't hold keys, There are solutions but no motivation
+# RobloxAndroidMidi
+
+This is an Android app that creates a virtual physical Keyboard via the linux UHID API to be able to convert MIDI signals into keyboard key strokes.
+
+Roblox DOES NOT accept virtual keystrokes sent to it via any means without registering a corresponding physical keyboard and therefore, a computer keyboard must be emulated.
+
+The source of the MIDI signals could either be a real electric piano you have plugged in via a MIDI cable(aka printer cable) or a MIDI file(for autoplaying).
+In simpler terms, you can use your piano or a music file to play music in Roblox Games that offer a piano.
+Eg: Piano Rooms, Piano Keyboard v1.1, Digital Piano, Piano Visualizations 2, etc.
+
+
+There are three ways for you to open this app for convenience\'s sake.
+
+1. You have the normal app button that shows up in your launcher like any other app.
+2. In your notification bar, there is a tile which you could add to the notification tile tab which\'d allow you to launch the application quickly
+3. Finally, a floating icon on your screen which appears whenever you start the MIDI Background Service
+
+You have two primary modes, Qwerty mode and Piano Rooms.
+
+Qwerty Mode is how the majority of piano games on Roblox function via keyboard. Qwerty mode is limited as it doesn\'t carry over information like note velocity(softness/loudness), currently held notes information(can\'t hold notes, which is a keyboard limitation[workaround available but then most roblox piano games don\'t even support it and it\'s too much work(feel free to send a PR)], sustain pedal, limited octave ranges(how high and low you can go), etc.
+
+\Piano Rooms mode, named after the Roblox game Piano Rooms(https://www.roblox.com/games/10888259502/Piano-Rooms), on the other hand was made to specifically work with Piano Room\'s(https://www.roblox.com/games/10888259502/Piano-Rooms) Midi Connect functionality.
+Unlike Qwerty mode, Piano Rooms DOES support note velocity(softness/loudness), held key information(CAN hold multiple notes properly), sustain pedal, bigger octave ranges(how high and low you can go), etc.
+The only caveat with it is the fact that Piano Rooms is the only game on Roblox that supports that mode.
+
+Huge thanks to WuDi-ZhanShen, yume-chan and the scrcpy project as this wouldn\'t have been possible without them.
