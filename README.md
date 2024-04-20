@@ -1,5 +1,6 @@
 # Note
-This app is still in development due to the fact that I wasn't able to come up with a solution to work with the keystroke input delay when attempting to use Piano Rooms mode. Additionally, I hadn't implemented a solution to hold down multiple keys when using qwerty since ONE emulated physical keyboard has a limit of 6 regular qwerty keys that could be held down simultaneously.(meta keys are handled slightly differently but that's irrelevant to the problem). I had thought of some solutions like emulating more than one physical keyboard at once and various others but couldn't really find the time nor motivation to do it.
+This app is still in development due to the fact that I wasn't able to come up with a solution to work with the keystroke input delay when attempting to use Piano Rooms mode. 
+Additionally, I hadn't implemented a solution to hold down multiple keys when using qwerty mode since ONE emulated physical keyboard has a limit of 6 regular qwerty keys that could be held down simultaneously.(meta keys are handled slightly differently but that's irrelevant to the problem). I had thought of some solutions like emulating more than one physical keyboard at once and various others but couldn't really find the time nor motivation to do it.
 At the app's current state, it works best in qwerty mode in a roblox game that allows you to turn on sustain.
 
 If you have experience with android development then help would be greatly appreciated.
