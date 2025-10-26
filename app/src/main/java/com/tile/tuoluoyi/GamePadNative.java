@@ -171,15 +171,13 @@ public class GamePadNative {
                     // When in qwerty hold,  isDown = false will be ignored(since it'll unhold immediately as no games properly utilize it)
                     // When in MidiConnect(Piano Rooms) mode, isDown=false will be taken into consideration
 
-//                    status=nativePianoKey(noteNumber, isDown);
-                    nativeQwertyKey(noteNumber, isDown);
 
-//                    if (isDown) {
-//                        //Log.d(MainActivity.TAG, "Key: " + Hid.keyboardCode[2])
-//                        status=nativePianoKey(noteNumber, isDown);
-//                    } else {
-//                        status=nativePianoKey(noteNumber, isDown);
-//                    }
+                      if (isDown) {
+                          //Log.d(MainActivity.TAG, "Key: " + Hid.keyboardCode[2])
+                          status=nativePianoKey(noteNumber, isDown);
+                      } else {
+                          status=nativePianoKey(noteNumber, isDown);
+                      }
 
 
 
