@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace 'com.tile.tuoluoyi'
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.tile.tuoluoyi"
         minSdk 24
-        targetSdk 34
+        targetSdk 36
         versionCode 14
         versionName "14"
 
@@ -41,5 +41,5 @@ android {
 dependencies {
     implementation 'dev.rikka.shizuku:api:13.1.0'
     implementation 'dev.rikka.shizuku:provider:13.1.0'
-    implementation 'androidx.core:core-ktx:+'
+    implementation 'androidx.core:core-ktx:1.17.0'
 }
